@@ -21,14 +21,10 @@ const loginCtrl = async (req,res)=>{
             return res.status(401).json({message:errMessage.notMatch});
         }
         const token = jwt.sign({userId: user.User_ID,role: user.Role_id,},secret,{
-            expiresIn:'1m'
+            expiresIn:'20m'
         })
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 60 * 1000
-        });
+        console.log('token :' ,token);
+        
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
             token

@@ -18,7 +18,7 @@ app.use('/api/auth',authRoute)
 
 
 //product
-app.use('/api/products',products)
+app.use('/api',products)
 
 
 app.listen(port,()=>{

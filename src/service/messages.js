@@ -3,7 +3,8 @@ const sucMessage = {
     register: 'Registration successful',
     login: 'Login successful',
     seeAll: 'Retrieved all items successfully',
-    getProduct: 'Product retrieved successfully'
+    getProduct: 'Product retrieved successfully',
+    delete:'deleted'
 };
 
 const errMessage = {
@@ -17,6 +18,7 @@ const errMessage = {
     requiredFields: 'All fields are required',
     invalidEmail: 'Invalid email address',
     exists: 'Email or phone number already exists',
+    noExists: 'no exists',
     server: 'Server error',
     errJWT: 'Please log in to continue'
 };

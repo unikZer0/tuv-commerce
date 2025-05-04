@@ -14,6 +14,15 @@ router.post('/category/getBoots',verifyToken,Products.getBoots);
 //cart
 
 router.post('/cart/insertCart',verifyToken,Products.insertCartCtrl);
-router.post('/cart/deleteCart',verifyToken,Products.deleteCartCtrl);
+router.post('/cart/deleteCart/:id',verifyToken,Products.deleteCartCtrl);
+
+//wishlist 
+
+router.post('/product/:id',verifyToken,Products.getProductCtrl);
+//product 
+
+router.post('/insertWishlist',verifyToken,Products.insertWishlistCtrl);
+router.post('/deleteWishlist/:id',verifyToken,Products.deletetWishlistCtrl);
+router.post('/showWishlist/:id',verifyToken,Products.showWishlist);
 
 module.exports = router
