@@ -1,24 +1,28 @@
 const conn = require('../../setting/connection');
-const cateQueries = require('./query/categoryQuery')
+const {cateQueries} = require('./query/categoryQuery')
 const {cartQueries,productQueries,wishListQueries} = require('./query/productQuery')
 const { sucMessage, errMessage } = require('../../service/messages');
 
-// category
-const fetchProducts = async (res, query, successMsg) => {
+// ================category
+const getProducts = async (req,res)=>{
     try {
-        const [results] = await conn.query(query);
-        res.json({ message: successMsg, products: results });
+        const [results]= await conn.query(cateQueries.getProductsQuery);
+        res.json({ message: sucMessage.getProduct, products: results });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: errMessage.serverError || "Internal Server Error" });
+    }
+}
+const getCategories = async (req,res) => {
+    try {
+        const productType_ID = req.params.id
+        const [results] = await conn.query(cateQueries.getCateQuery,[productType_ID]);
+        res.json({ message: sucMessage.seeAll, products: results });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: errMessage.serverError || "Internal Server Error" });
     }
 };
-const getProducts = (req, res) => fetchProducts(res, cateQueries.getProductsQuery, sucMessage.getproduct);
-const getSports = (req, res) => fetchProducts(res, cateQueries.getSportsQuery, sucMessage.getSports);
-const getWorks = (req, res) => fetchProducts(res, cateQueries.getworkQuery, sucMessage.getWork);
-const getFasions = (req, res) => fetchProducts(res, cateQueries.getfasionQuery, sucMessage.getFashion);
-const getHomes = (req, res) => fetchProducts(res, cateQueries.gethomeQuery, sucMessage.getHome);
-const getBoots = (req, res) => fetchProducts(res, cateQueries.getbootQuery, sucMessage.getBoot);
 //========================== cart
 //insert
 const insertCartCtrl = async (req, res) => {
@@ -68,6 +72,7 @@ const getProductCtrl = async (req,res)=>{
     }
 }
 //==================wishlist
+//insert
 const insertWishlistCtrl = async (req,res) =>{
     try {
         const Date_Added = new Date();
@@ -82,6 +87,7 @@ const insertWishlistCtrl = async (req,res) =>{
         res.status(500).json({ error: "Server Failed" });
     }
 }
+//delete
 const deletetWishlistCtrl = async (req,res) =>{
     try {
         const Wishlist_ID = req.params.id;
@@ -93,6 +99,7 @@ const deletetWishlistCtrl = async (req,res) =>{
         res.status(500).json({ error: "Server Failed" });
     }
 }
+//show each  user
 const showWishlist = async (req,res)=>{
     try {
         const User_ID = req.params.id;
@@ -108,11 +115,7 @@ const showWishlist = async (req,res)=>{
 }
 module.exports = {
     getProducts,
-    getSports,
-    getWorks,
-    getFasions,
-    getHomes,
-    getBoots,
+    getCategories,
     insertCartCtrl,
     deleteCartCtrl,
     getProductCtrl,
