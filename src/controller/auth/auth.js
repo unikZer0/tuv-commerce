@@ -7,6 +7,7 @@ const secret = 'mysecret'
 const validator = require('validator')
 const loginCtrl = async (req,res)=>{
     try {
+      
         const {identifier,Password} = req.body
         if (!identifier || !Password) {
             return res.status(400).json({ message: "Missing identifier or Password" });
@@ -24,7 +25,7 @@ const loginCtrl = async (req,res)=>{
             expiresIn:'20m'
         })
         console.log('token :' ,token);
-        
+      
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
             token

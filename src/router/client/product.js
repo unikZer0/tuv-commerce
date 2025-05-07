@@ -1,10 +1,10 @@
 const express = require('express')
 const router = express()
-const Products = require('../controller/product/productCtrl');
-const verifyToken = require('../controller/tokenhandle/verifyToken')
+const Products = require('../../controller/product/productCtrl');
+const verifyToken = require('../../controller/tokenhandle/verifyToken')
 
 //category
-router.post('/categories/getAll',verifyToken,Products.getProducts);
+router.post('/categories/',verifyToken,Products.getProducts);
 router.post('/categories/:id',verifyToken,Products.getCategories);
 
 //cart
@@ -12,7 +12,7 @@ router.post('/categories/:id',verifyToken,Products.getCategories);
 router.post('/cart/insertCart',verifyToken,Products.insertCartCtrl);
 router.post('/cart/deleteCart/:id',verifyToken,Products.deleteCartCtrl);
 
- //product 
+//product 
 
 router.post('/product/:id',verifyToken,Products.getProductCtrl);
 //wishlist
