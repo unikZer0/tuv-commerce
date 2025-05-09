@@ -2,6 +2,7 @@ const conn = require('../../setting/connection');
 const {cateQueries} = require('./query/categoryQuery')
 const {cartQueries,productQueries,wishListQueries} = require('./query/productQuery')
 const { sucMessage, errMessage } = require('../../service/messages');
+const {gennerateCartCode} = require('../helpers/cidGenCode');
 
 // ================category
 const getProducts = async (req,res)=>{
@@ -27,10 +28,10 @@ const getCategories = async (req,res) => {
 //insert
 const insertCartCtrl = async (req, res) => {
     try {
-        const { Product_ID, Size, Color, Quantity, Unit_price } = req.body;
+        const CID = await gennerateCartCode(conn);
+        const { User_ID,Product_ID , Size, Color, Quantity, Unit_price } = req.body;
         console.log(Product_ID, Size, Color, Quantity, Unit_price);
-        
-        const [results] = await conn.query(cartQueries.insert, [Product_ID, Size, Color, Quantity, Unit_price]);
+        const [results] = await conn.query(cartQueries.insert, [CID,User_ID,Product_ID , Size, Color, Quantity, Unit_price]);
         res.status(200).json({ message: "created", data: results });
     } catch (error) {
         console.log(error);

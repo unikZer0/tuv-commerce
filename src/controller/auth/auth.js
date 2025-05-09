@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const {loginQuery,registerQuery,checkExist} = require('./query')
 const {sucMessage,errMessage} = require('../../service/messages')
 const bcrypt = require('bcrypt')
+const { gennerateUserCode } = require('../helpers/uidGenCode')
 const secret = 'mysecret'
 const validator = require('validator')
 const loginCtrl = async (req,res)=>{
@@ -62,13 +63,14 @@ const regitserCtrl = async(req,res)=>{
             res.status(400).json({message:errMessage.exists})
           }
 //hash Password
+          const UID = await gennerateUserCode(conn);
           const salt = await bcrypt.genSalt(10)
           const hashPwd = await bcrypt.hash(Password , salt)
 //free field 
           const RegistrationDate = new Date();
           const Role_id = 3
 //insert
-          const userData = await conn.query(registerQuery,[FirstName,LastName,Email,Phone,Datebirth,Sex,hashPwd,Images || null ,RegistrationDate,Role_id])
+          const userData = await conn.query(registerQuery,[UID,FirstName,LastName,Email,Phone,Datebirth,Sex,hashPwd,Images || null ,RegistrationDate,Role_id])
           
           return res.status(201).json({message:sucMessage.insert , users:userData})
     } catch (error) {
