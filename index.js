@@ -9,11 +9,17 @@ const cors = require('cors')
 app.use(bodyParser.json())
 app.use(cookiesParser())
 
-//admin route
-
-//call client route
 
 app.use(cors())
+
+//admin route
+const users = require('./src/router/admin/user')
+
+//get users
+app.use('/api/admin',users)
+//call client route
+
+
 const authRoute = require('./src/router/client/auth')
 const products = require('./src/router/client/product')
 

@@ -26,6 +26,7 @@ const loginCtrl = async (req,res)=>{
             expiresIn:'20m'
         })
         console.log('token :' ,token);
+        console.log('user :' ,user);
       
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
@@ -60,7 +61,7 @@ const regitserCtrl = async(req,res)=>{
 //check existing Password
           const [exists] = await conn.query(checkExist,[Email,Phone])
           if(exists.length > 0){
-            res.status(400).json({message:errMessage.exists})
+           return res.status(400).json({message:errMessage.exists})
           }
 //hash Password
           const UID = await gennerateUserCode(conn);
