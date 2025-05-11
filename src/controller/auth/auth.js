@@ -30,7 +30,8 @@ const loginCtrl = async (req,res)=>{
       
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
-            token
+            token,
+            userId: user.User_ID
           });
     } catch (error) {
         console.log(error);
