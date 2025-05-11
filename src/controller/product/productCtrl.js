@@ -78,13 +78,17 @@ const insertWishlistCtrl = async (req,res) =>{
     try {
         const Date_Added = new Date();
         const {User_ID,Product_ID} = req.body;
+        
+        const [results] = await conn.query(wishListQueries.insert,[User_ID,Product_ID,Date_Added])
         if (!User_ID || !Product_ID) {
             return res.status(400).json({ error: 'User_ID and Product_ID are required' });
           }
-        const [results] = await conn.query(wishListQueries.insert,[User_ID,Product_ID,Date_Added])
         res.status(201).json({message:"show product",data:results})
     } catch (error) {
         console.log(error);
+        if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({ error: 'Invalid User_ID or Product_ID' });
+    }
         res.status(500).json({ error: "Server Failed" });
     }
 }

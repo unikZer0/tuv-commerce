@@ -8,7 +8,7 @@ const getAllUsersCtrl = async (req, res) => {
 
     return res.status(200).json({
       message: sucMessage.seeAll,
-      users: results,
+      data: results,
     });
 
   } catch (error) {

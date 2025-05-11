@@ -16,7 +16,7 @@ app.use(cors())
 const users = require('./src/router/admin/user')
 
 //get users
-app.use('/api/admin',users)
+app.use('/api/admin/',users)
 //call client route
 
 
@@ -29,7 +29,7 @@ app.use('/api/auth/',authRoute)
 
 
 //product
-app.use('/api',products)
+app.use('/api/',products)
 
 
 app.listen(port,()=>{
