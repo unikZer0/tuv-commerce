@@ -95,8 +95,8 @@ const insertWishlistCtrl = async (req,res) =>{
 //delete
 const deletetWishlistCtrl = async (req,res) =>{
     try {
-        const Wishlist_ID = req.params.id;
-        const [results] = await conn.query(wishListQueries.delete,[Wishlist_ID])
+        const Product_ID = req.params.id;
+        const [results] = await conn.query(wishListQueries.delete,[Product_ID])
         const [showAll] = await conn.query(wishListQueries.showAll);
         res.status(201).json({message:sucMessage.delete,data:showAll})
     } catch (error) {
