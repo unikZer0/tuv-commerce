@@ -1,36 +1,41 @@
 //all
 const cateQueries = {
      getProductsQuery : `
-  SELECT 
+SELECT 
     p.Product_ID,
-    p.Name ,
+    p.Name,
     p.Description,
     p.Brand,
     p.Image,
     p.Price,
-    i.Size,
-    i.Color,
-    i.Quantity
+    GROUP_CONCAT(DISTINCT i.Size ORDER BY i.Size SEPARATOR ', ') AS Sizes,
+    GROUP_CONCAT(DISTINCT i.Color ORDER BY i.Color SEPARATOR ', ') AS Colors,
+    SUM(i.Quantity) AS Total_Quantity
 FROM 
     products p
 JOIN 
-    inventory i ON p.Product_ID = i.Product_ID;
+    inventory i ON p.Product_ID = i.Product_ID
+GROUP BY 
+    p.Product_ID;
 `,
  getCateQuery :`
-  SELECT 
+SELECT 
     p.Product_ID,
-    p.Name ,
+    p.Name,
     p.Description,
     p.Brand,
     p.Image,
     p.Price,
-    i.Size,
-    i.Color,
-    i.Quantity
+    GROUP_CONCAT(DISTINCT i.Size ORDER BY i.Size SEPARATOR ', ') AS Sizes,
+    GROUP_CONCAT(DISTINCT i.Color ORDER BY i.Color SEPARATOR ', ') AS Colors,
+    SUM(i.Quantity) AS Total_Quantity
 FROM 
     products p
 JOIN 
     inventory i ON p.Product_ID = i.Product_ID WHERE p.productType_ID = ?
+GROUP BY 
+    p.Product_ID;
+    
 `
 }
 
