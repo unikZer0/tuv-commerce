@@ -31,6 +31,7 @@ const loginCtrl = async (req,res)=>{
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
             token,
+            role:user.Role_id,
             userId: user.User_ID
           });
     } catch (error) {
