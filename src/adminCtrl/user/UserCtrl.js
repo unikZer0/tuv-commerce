@@ -12,7 +12,7 @@ const getAllUsersCtrl = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Get all users error:", error);
+    console.error("users error:", error);
     return res.status(500).json({ message: errMessage.server });
   }
 };
