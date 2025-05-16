@@ -8,7 +8,6 @@ const secret = 'mysecret'
 const validator = require('validator')
 const loginCtrl = async (req,res)=>{
     try {
-      
         const {identifier,Password} = req.body
         if (!identifier || !Password) {
             return res.status(400).json({ message: "Missing identifier or Password" });
@@ -23,7 +22,7 @@ const loginCtrl = async (req,res)=>{
             return res.status(401).json({message:errMessage.notMatch});
         }
         const token = jwt.sign({userId: user.User_ID,role: user.Role_id,},secret,{
-            expiresIn:'20m'
+            expiresIn:'20h'
         })
         console.log('token :' ,token);
         console.log('user :' ,user);
