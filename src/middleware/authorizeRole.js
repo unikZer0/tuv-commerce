@@ -5,7 +5,7 @@ module.exports = function authorizeRole (...allowedRoles) {
         console.log(userRole);
         
         if (!userRole || !allowedRoles.includes(userRole)) {
-            console.log(userRole);
+            console.log("user :",userRole);
             
             return res.status(403).json({Message:"Access dinined : wrong role"})
         }

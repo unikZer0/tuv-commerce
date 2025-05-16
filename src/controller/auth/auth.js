@@ -25,7 +25,6 @@ const loginCtrl = async (req,res)=>{
             expiresIn:'20h'
         })
         console.log('token :' ,token);
-        console.log('user :' ,user);
       
         return res.status(200).json({
             message: sucMessage.login || "Login successful",

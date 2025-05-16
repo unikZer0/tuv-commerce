@@ -14,10 +14,7 @@ const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token,secret);
 
     // Attach to request so later middlewares can use it
-    req.user = {
-                id: decoded.userId,
-                role:decoded.role
-            }
+    req.user = decoded
 
     next();
     console.log(decoded);

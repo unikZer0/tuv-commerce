@@ -29,7 +29,9 @@ const getCategories = async (req,res) => {
 const insertCartCtrl = async (req, res) => {
     try {
         const CID = await gennerateCartCode(conn);
-        const { User_ID,Product_ID , Size, Color, Quantity, Unit_price } = req.body;
+
+        const User_ID = req.user.userId
+        const {Product_ID , Size, Color, Quantity, Unit_price } = req.body;
         console.log(Product_ID, Size, Color, Quantity, Unit_price);
         const [results] = await conn.query(cartQueries.insert, [CID,User_ID,Product_ID , Size, Color, Quantity, Unit_price]);
         res.status(200).json({ message: "created", data: results });
