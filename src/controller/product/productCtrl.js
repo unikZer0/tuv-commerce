@@ -116,15 +116,18 @@ const checkoutCtrl = async (req,res)=>{
     try {
         const User_ID = req.user.userId;
         
-        const {paymentMethode} = req.body
-        
+        const { Address_ID, totalAmount, items, paymentMethode } = req.body;
+
+        if (!Address_ID || !totalAmount || !items || !Array.isArray(items)) {
+            return res.status(400).json({ message: 'Missing required fields' });
+            }
         if (!paymentMethode) {
             return res.json({message:'please select payment methode'})
         }
         if(paymentMethode === 'destination'){
            try {
             //shipment
-            const Tracking_Number = uuidv4()
+            const Tracking_Number = uuidv4().slice(0, 10);
             const shipmentData ={
                 Tracking_Number,
                 Ship_Status:'preparing',
@@ -133,9 +136,9 @@ const checkoutCtrl = async (req,res)=>{
             const [shipment] = await conn.query(orderQuery.insertShipment,shipmentData);
             //order
             const Shipment_ID = shipment.insertId
+            const rawUuid = uuidv4()
              const OID = await 'OID' +rawUuid.replace(/-/g,'').slice(0, 10);
              const Order_Date = new Date()
-             const {Address_ID,totalAmount} = req.body;
              const session_id = uuidv4()
              const orderData = {
                  OID,
@@ -171,12 +174,24 @@ const checkoutCtrl = async (req,res)=>{
                 Subtotal,
                 Added_at
              } 
-             await conn.query(orderQuery.insertCart,cartData)
+            await conn.query(orderQuery.insertCart,cartData)
+            
+             }
+             const [carts] = await conn.query(orderQuery.callToDelete,Order_ID)
+             for(const item of carts){
+                const [[stockRow]] = await conn.query(orderQuery.checkStock,[item.Product_ID, item.Size, item.Color]
+                );
+
+                if (!stockRow || stockRow.Quantity < item.Quantity) {
+                    return res.status(400).json({
+                    message: `Not enough stock for Product ID ${item.Product_ID}, Color ${item.Color}, Size ${item.Size}`
+                    });
+                }
+                await conn.query(orderQuery.deleteStock,[item.Quantity,item.Product_ID,item.Size,item.Color]) 
              }
              return res.json({message:"success data"})
            } catch (error) {
             console.log(error);
-            
            }
         }
     } catch (error) {

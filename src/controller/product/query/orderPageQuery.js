@@ -6,7 +6,10 @@ const addressQueries = {
 const orderQuery = {
     insertOrder:`INSERT INTO orders SET ?`,
     insertShipment:`INSERT INTO shipment SET ?`,
-    insertCart:`INSERT INTO cart SET ?`
+    insertCart:`INSERT INTO cart SET ?`,
+    callToDelete:`SELECT Product_ID,Quantity,Size,Color FROM cart WHERE Order_ID = ?`,
+    deleteStock:`UPDATE inventory SET Quantity = Quantity - ? WHERE Product_ID = ? AND  Size = ? AND  Color = ?`,
+    checkStock:`SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`
 }
 module.exports = {
     addressQueries,
