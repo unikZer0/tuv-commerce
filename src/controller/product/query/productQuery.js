@@ -1,8 +1,4 @@
 
-const cartQueries = {
-    insert: `INSERT INTO cart (CID,User_ID ,Product_ID, Size, Color, Quantity, Unit_Price) VALUES (?,?, ?, ?, ?, ?, ?)`,
-    delete:`DELETE FROM cart WHERE Order_Items_ID = ?`,
-  };
 const productQueries ={
   showProduct:`SELECT * FROM products WHERE Product_ID = ?`,
 }
@@ -17,5 +13,5 @@ const wishListQueries = {
 `,
 
 }
-module.exports = {cartQueries,productQueries,wishListQueries};
+module.exports = {productQueries,wishListQueries};
   

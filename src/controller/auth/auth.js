@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken')
 const {loginQuery,registerQuery,checkExist} = require('./query')
 const {sucMessage,errMessage} = require('../../service/messages')
 const bcrypt = require('bcrypt')
-const { gennerateUserCode } = require('../helpers/uidGenCode')
+const { v4: uuidv4 } = require("uuid");
 const secret = 'mysecret'
 const validator = require('validator')
 const loginCtrl = async (req,res)=>{
@@ -40,6 +40,7 @@ const loginCtrl = async (req,res)=>{
 const regitserCtrl = async(req,res)=>{
     try {
 //required
+const rawUuid = uuidv4();
         const {
             FirstName,
             LastName,
@@ -64,7 +65,7 @@ const regitserCtrl = async(req,res)=>{
            return res.status(400).json({message:errMessage.exists})
           }
 //hash Password
-          const UID = await gennerateUserCode(conn);
+          const UID = await 'UID' + rawUuid.replace(/-/g,'').slice(0, 10);
           const salt = await bcrypt.genSalt(10)
           const hashPwd = await bcrypt.hash(Password , salt)
 //free field 
