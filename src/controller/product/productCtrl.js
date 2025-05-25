@@ -147,7 +147,32 @@ const checkoutCtrl = async (req,res)=>{
                  Total_Amount:totalAmount,
                  session_id
              } 
-             await conn.query(orderQuery.insertOrder,orderData)
+            const [order] = await conn.query(orderQuery.insertOrder,orderData)
+            const Order_ID = order.insertId;
+            console.log(Order_ID);
+            
+             
+             
+             const Added_at = new Date()
+             const {items} = req.body;
+             for(const item of items){
+                const {Product_ID,Size,Color,Quantity,Unit_Price,Subtotal} = item
+                const rawUuid = uuidv4()
+                const CID = await 'CID'+ rawUuid.replace(/-/g,'').slice(0,15)
+             const cartData = {
+                CID,
+                Order_ID,
+                User_ID,
+                Product_ID,
+                Size,
+                Color,
+                Quantity,
+                Unit_Price,
+                Subtotal,
+                Added_at
+             } 
+             await conn.query(orderQuery.insertCart,cartData)
+             }
              return res.json({message:"success data"})
            } catch (error) {
             console.log(error);

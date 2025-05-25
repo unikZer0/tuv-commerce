@@ -5,7 +5,8 @@ const addressQueries = {
 }
 const orderQuery = {
     insertOrder:`INSERT INTO orders SET ?`,
-    insertShipment:`INSERT INTO shipment SET ?`
+    insertShipment:`INSERT INTO shipment SET ?`,
+    insertCart:`INSERT INTO cart SET ?`
 }
 module.exports = {
     addressQueries,
