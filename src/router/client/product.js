@@ -2,7 +2,6 @@ const express = require('express')
 const router = express()
 const Products = require('../../controller/product/productCtrl');
 const verifyToken = require('../../controller/tokenhandle/verifyToken')
-
 //category
 router.post('/categories/',verifyToken,Products.getProducts);
 router.post('/categories/:id',verifyToken,Products.getCategories);

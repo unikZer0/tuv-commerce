@@ -9,7 +9,11 @@ const orderQuery = {
     insertCart:`INSERT INTO cart SET ?`,
     callToDelete:`SELECT Product_ID,Quantity,Size,Color FROM cart WHERE Order_ID = ?`,
     deleteStock:`UPDATE inventory SET Quantity = Quantity - ? WHERE Product_ID = ? AND  Size = ? AND  Color = ?`,
-    checkStock:`SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`
+    checkStock:`SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`,
+    checkProduct:`SELECT * FROM products WHERE Product_ID = ?`,
+    checkCart:`SELECT Quantity,Unit_Price FROM cart WHERE Product_ID = ?`,
+    updateSession:`UPDATE orders SET ? WHERE session_id = ?`,
+    findIdBysession:`SELECT Order_ID FROM orders WHERE session_id = ?`
 }
 module.exports = {
     addressQueries,

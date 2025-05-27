@@ -10,7 +10,7 @@ SELECT
     p.Price,
     GROUP_CONCAT(DISTINCT i.Size ORDER BY i.Size SEPARATOR ', ') AS Sizes,
     GROUP_CONCAT(DISTINCT i.Color ORDER BY i.Color SEPARATOR ', ') AS Colors,
-    SUM(i.Quantity) AS Total_Quantity
+    SUM(i.Quantity) AS Total_Quantity ,i.Quantity
 FROM 
     products p
 JOIN 

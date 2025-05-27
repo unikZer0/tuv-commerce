@@ -5,12 +5,14 @@ const cookiesParser = require('cookie-parser')
 const app = express()
 const port = 3000
 const cors = require('cors')
-
-app.use(bodyParser.json())
-app.use(cookiesParser())
-
-
 app.use(cors())
+
+const webhook = require('./src/router/client/webhook')
+app.use('/api/',webhook);
+app.use(bodyParser.json())
+
+
+
 
 //admin route
 const users = require('./src/router/admin/user')
