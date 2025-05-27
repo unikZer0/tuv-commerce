@@ -1,14 +1,16 @@
 const express = require('express')
 
 const bodyParser = require('body-parser')
-const cookiesParser = require('cookie-parser')
 const app = express()
 const port = 3000
 const cors = require('cors')
 
-app.use(bodyParser.json())
-app.use(cookiesParser())
+app.use(express.static('public'));
+const webhook = require('./src/router/client/webhook')
+app.use('/api',webhook)
 
+
+app.use(bodyParser.json())
 
 app.use(cors())
 
