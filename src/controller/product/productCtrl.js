@@ -6,8 +6,7 @@ const { sucMessage, errMessage } = require("../../service/messages");
 const { addressQueries } = require("./query/orderPageQuery");
 const { v4: uuidv4 } = require("uuid");
 require('dotenv').config();
-
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")('sk_test_51RQ0e44c05uxt3S1YswQ1jP45uwZedHiuUaAlYYLQHoEdYvvvdphhP6jEC1KTfQps0Y7SqDIdZuhNB6JWHXT3GnC00btevvoXQ');
 
 // ================category
 
@@ -173,7 +172,7 @@ const checkoutCtrl = async (req, res) => {
           Address_ID,
           Shipment_ID,
           Order_Status: "completed",
-          Total_Amount: totalAmount,
+          Total_Amount: totalAmount ,
           session_id,
         };
         const [order] = await conn.query(orderQuery.insertOrder, orderData);
@@ -184,16 +183,17 @@ const checkoutCtrl = async (req, res) => {
           Order_ID,
           Payment_Status: 'paid',
           Payment_Method: 'on delivery',
-          Amount: totalAmount,
+          Amount: totalAmount *100,
           Currency: 'lak',
           Payment_Intent_ID: uuidv4().slice(0, 10)
         };
 
         await conn.query('INSERT INTO payments SET ?', paymentData);
         console.log(Order_ID);
-
         const Added_at = new Date();
         const { items } = req.body;
+        console.log(items);
+        
         for (const item of items) {
           const { Product_ID, Size, Color, Quantity, Unit_Price, Subtotal } =
             item;
@@ -257,12 +257,11 @@ const checkoutCtrl = async (req, res) => {
                 name: product[0].Name,
                 description: product[0].Description,
               },
-              unit_amount: item.Unit_Price,
+              unit_amount: item.Unit_Price *100,
             },
             quantity: item.Quantity,
-          });
+          });      
         }
-
         const Order_Date = new Date();
         const rawUuid = uuidv4();
         const OID = "OID" + rawUuid.replace(/-/g, "").slice(0, 10);
@@ -275,7 +274,6 @@ const checkoutCtrl = async (req, res) => {
           success_url: `http://localhost:8888/success.html?id=${OID}`,
           cancel_url: `http://localhost:8888/cancel.html?id=${OID}`,
         });
-
         const Tracking_Number = uuidv4().slice(0, 10);
         const shipmentData = {
           Tracking_Number,
@@ -292,7 +290,6 @@ const checkoutCtrl = async (req, res) => {
           shipmentData
         );
         const Shipment_ID = shipment.insertId;
-
         const orderData = {
           OID,
           Order_Date,
@@ -307,8 +304,6 @@ const checkoutCtrl = async (req, res) => {
         if (!orderQuery.insertOrder) {
           throw new Error("orderQuery.insertOrder is undefined");
         }
-
-        await conn.query('INSERT INTO payments SET ?', paymentData);
         const [order] = await conn.query(orderQuery.insertOrder, orderData);
         const Order_ID = order.insertId;
 
@@ -337,12 +332,35 @@ const checkoutCtrl = async (req, res) => {
 
           await conn.query(orderQuery.insertCart, cartData);
         }
+        const [carts] = await conn.query(orderQuery.callToDelete, Order_ID);
+        for (const item of carts) {
+          
+          const [[stockRow]] = await conn.query(orderQuery.checkStock, [
+            item.Product_ID,
+            item.Size,
+            item.Color,
+          ]);
 
-        return res.json({
+          if (!stockRow || stockRow.Quantity < item.Quantity) {
+            return res.status(400).json({
+              message: `Not enough stock for Product ID ${item.Product_ID}, Color ${item.Color}, Size ${item.Size}`,
+            });
+          }
+          await conn.query(orderQuery.deleteStock, [
+            item.Quantity,
+            item.Product_ID,
+            item.Size,
+            item.Color,
+          ]);
+            return res.json({
           message: "Stripe session created",
           session_url: session.url,
           session_id :session.id
-        });
+          });
+          
+          
+        }
+        
       } catch (error) {
         console.error("Stripe/card checkout error:", error);
         return res.status(500).json({ message: "Internal server error" });
@@ -380,7 +398,6 @@ const webhookCtrl = async (req,res)=>{
         // Get order ID
         const [orderResult] = await conn.query('SELECT Order_ID FROM orders WHERE session_id = ?', [session.id]);
         const Order_ID = orderResult.length ? orderResult[0].Order_ID : null;
-
         if (!Order_ID) {
           console.error('Order not found for session_id:', session.id);
           return res.status(404).send('Order not found');
@@ -392,7 +409,7 @@ const webhookCtrl = async (req,res)=>{
           Order_ID,
           Payment_Status: session.payment_status,
           Payment_Method: session.payment_method_types[0],
-          Amount: session.amount_total / 100,
+          Amount: session.amount_total ,
           Currency: session.currency,
           Payment_Intent_ID: session.payment_intent
         };
