@@ -194,6 +194,92 @@ const checkoutCtrl = async (req,res)=>{
             console.log(error);
            }
         }
+        if (paymentMethode === "card") {
+  try {
+    const lineItems = [];
+
+    for (const item of items) {
+      const [product] = await conn.query(orderQuery.checkProduct, item.Product_ID);
+      if (!product.length) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      lineItems.push({
+        price_data: {
+          currency: "lak",
+          product_data: {
+            name: product[0].Name,
+            description: product[0].Description,
+          },
+          unit_amount: item.Unit_Price,
+        },
+        quantity: item.Quantity,
+      });
+    }
+
+    const Order_Date = new Date();
+    const rawUuid = uuidv4();
+    const OID = "OID" + rawUuid.replace(/-/g, "").slice(0, 10);
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      allow_promotion_codes: true,
+      success_url: `http://localhost:8888/success.html?id=${OID}`,
+      cancel_url: `http://localhost:8888/cancel.html?id=${OID}`,
+    });
+
+    const Tracking_Number = uuidv4().slice(0, 10);
+    const shipmentData = {
+      Tracking_Number,
+      Ship_Status: "preparing",
+      Ship_Date: new Date(),
+    };
+    const [shipment] = await conn.query(orderQuery.insertShipment, shipmentData);
+    const Shipment_ID = shipment.insertId;
+
+    const orderData = {
+      OID,
+      Order_Date,
+      User_ID,
+      Address_ID,
+      Shipment_ID,
+      Order_Status: "pending", // wait for payment success
+      Total_Amount: totalAmount,
+      session_id: session.id,
+    };
+
+    const [order] = await conn.query(orderQuery.insertOrder, orderData);
+    const Order_ID = order.insertId;
+
+    const Added_at = new Date();
+    for (const item of items) {
+      const { Product_ID, Size, Color, Quantity, Unit_Price, Subtotal } = item;
+      const CID = "CID" + uuidv4().replace(/-/g, "").slice(0, 15);
+      const cartData = {
+        CID,
+        Order_ID,
+        User_ID,
+        Product_ID,
+        Size,
+        Color,
+        Quantity,
+        Unit_Price,
+        Subtotal,
+        Added_at,
+      };
+      await conn.query(orderQuery.insertCart, cartData);
+    }
+
+    return res.json({ message: "Stripe session created", session_url: session.url });
+
+  } catch (error) {
+    console.error("Stripe/card checkout error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
     } catch (error) {
         console.log(console.error);
     }
