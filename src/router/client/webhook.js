@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express()
-const Products = require('../../controller/product/productCtrl');
+const checkouts = require('../../controller/product/checkoutCtrl');
 
-router.post("/webhook",express.raw({ type: 'application/json' }),Products.webhookCtrl);
+router.post("/webhook",express.raw({ type: 'application/json' }),checkouts.webhookCtrl);
 
 module.exports = router
