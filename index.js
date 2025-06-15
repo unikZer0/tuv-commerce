@@ -20,6 +20,7 @@ const dashboard = require('./src/router/admin/dashboard')
 
 app.use('/api/admin/',users)
 app.use('/api/admin/',dashboard)
+
 //call client route
 
 

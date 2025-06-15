@@ -11,7 +11,8 @@ const orderQuery = {
   callToDelete: `SELECT Product_ID, Quantity, Size, Color FROM cart WHERE Order_ID = ?`,
   deleteStock: `UPDATE inventory SET Quantity = Quantity - ? WHERE Product_ID = ? AND Size = ? AND Color = ?`,
   checkStock: `SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`,
-  checkProduct: `SELECT * FROM products WHERE Product_ID = ?` 
+  checkProduct: `SELECT * FROM products WHERE Product_ID = ?` ,
+  actualAmount:`update monthly_targets set Actual_Amount = Actual_Amount + ?`
 };
 
 module.exports = {
