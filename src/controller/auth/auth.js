@@ -33,7 +33,7 @@ const loginCtrl = async (req,res)=>{
             userId: user.User_ID
           });
     } catch (error) {
-        console.log(error);
+        console.log("err :" ,error);
         
     }
 }
