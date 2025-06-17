@@ -14,13 +14,8 @@ app.use(cors())
 
 //admin route
 const users = require('./src/router/admin/user')
-//admin product
-const product_t = require('./src/router/admin/product')
-app.use('/api/admin/',product_t)
 
-//get users
 app.use('/api/admin/',users)
-
 //call client route
 
 

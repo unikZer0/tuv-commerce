@@ -46,6 +46,7 @@ const checkoutCtrl = async (req, res) => {
           Total_Amount: totalAmount ,
           session_id,
         };
+        await conn.query(orderQuery.actualAmount,totalAmount)
         const [order] = await conn.query(orderQuery.insertOrder, orderData);
         const Order_ID = order.insertId;
         const payment_id = uuidv4().replace(/-/g, "").slice(0, 15);
@@ -132,11 +133,16 @@ const checkoutCtrl = async (req, res) => {
             },
             quantity: item.Quantity,
           });      
+          
+          
         }
         const Order_Date = new Date();
         const rawUuid = uuidv4();
         const OID = "OID" + rawUuid.replace(/-/g, "").slice(0, 10);
-
+        console.log("hi  :",lineItems);
+        if (!lineItems.length) {
+              return res.status(400).json({ message: "No valid products found in cart" });
+            }
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
           line_items: lineItems,
@@ -175,6 +181,7 @@ const checkoutCtrl = async (req, res) => {
         if (!orderQuery.insertOrder) {
           throw new Error("orderQuery.insertOrder is undefined");
         }
+        await conn.query(orderQuery.actualAmount,totalAmount)
         const [order] = await conn.query(orderQuery.insertOrder, orderData);
         const Order_ID = order.insertId;
 
@@ -265,8 +272,6 @@ const webhookCtrl = async (req,res)=>{
         };
 
         await conn.query('UPDATE orders SET ? WHERE session_id = ?', [orderUpdate, session.id]);
-
-        // Get order ID
         const [orderResult] = await conn.query('SELECT Order_ID FROM orders WHERE session_id = ?', [session.id]);
         const Order_ID = orderResult.length ? orderResult[0].Order_ID : null;
         if (!Order_ID) {
@@ -274,7 +279,6 @@ const webhookCtrl = async (req,res)=>{
           return res.status(404).send('Order not found');
         }
 
-        // Insert payment
         const paymentData = {
           Payment_ID: session.payment_intent,
           Order_ID,
@@ -287,14 +291,12 @@ const webhookCtrl = async (req,res)=>{
 
         await conn.query('INSERT INTO payments SET ?', paymentData);
 
-        // Update inventory
         const [cartItems] = await conn.query('SELECT Product_ID, Quantity, Size, Color FROM cart WHERE Order_ID = ?', [Order_ID]);
 
         for (const item of cartItems) {
           await conn.query(orderQuery.deleteStock, [item.Quantity, item.Product_ID, item.Size, item.Color]);
         }
 
-        // Handle promo code
         let promo_code_id = null;
         let promo_code_str = null;
 
