@@ -1,24 +1,26 @@
 const express = require('express')
 
 const bodyParser = require('body-parser')
+const cookiesParser = require('cookie-parser')
 const app = express()
 const port = 3000
 const cors = require('cors')
 
-app.use(express.static('public'));
-const webhook = require('./src/router/client/webhook')
-app.use('/api',webhook)
-
-
 app.use(bodyParser.json())
+app.use(cookiesParser())
+
 
 app.use(cors())
 
 //admin route
 const users = require('./src/router/admin/user')
+//admin product
+const product_t = require('./src/router/admin/product')
+app.use('/api/admin/',product_t)
 
 //get users
 app.use('/api/admin/',users)
+
 //call client route
 
 
@@ -34,7 +36,7 @@ app.use('/api/auth/',authRoute)
 app.use('/api/',products)
 
 
+
 app.listen(port,()=>{
     console.log(`running at http://localhost:${port}`);
-    
 })
