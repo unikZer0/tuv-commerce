@@ -1,4 +1,5 @@
 const { wishListQueries } = require("./query/productQuery");
+const conn = require('../../setting/connection')
 const insertWishlistCtrl = async (req, res) => {
   try {
     const Date_Added = new Date();

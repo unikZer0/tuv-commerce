@@ -133,11 +133,16 @@ const checkoutCtrl = async (req, res) => {
             },
             quantity: item.Quantity,
           });      
+          
+          
         }
         const Order_Date = new Date();
         const rawUuid = uuidv4();
         const OID = "OID" + rawUuid.replace(/-/g, "").slice(0, 10);
-
+        console.log("hi  :",lineItems);
+        if (!lineItems.length) {
+              return res.status(400).json({ message: "No valid products found in cart" });
+            }
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ["card"],
           line_items: lineItems,
