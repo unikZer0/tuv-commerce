@@ -16,9 +16,11 @@ app.use(cors())
 
 //admin route
 const users = require('./src/router/admin/user')
+const dashboard = require('./src/router/admin/dashboard')
 
-//get users
 app.use('/api/admin/',users)
+app.use('/api/admin/',dashboard)
+
 //call client route
 
 
