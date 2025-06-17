@@ -10,22 +10,18 @@ const productQueries = {
     p.Status,
     p.Image,
     pt.productType_Name AS productType,
-    s.Shop_Name AS shopName,
     p.Added_By
 FROM 
     products p
 LEFT JOIN 
     product_types pt ON p.productType_ID = pt.productType_ID
-LEFT JOIN 
-    shops s ON p.Shop_ID = s.Shop_ID;
 `,
     getProductById: `SELECT * FROM products WHERE Product_ID = ?`,
-    getProductsByShop: `SELECT * FROM products WHERE Shop_ID = ?`,
     getProductsByType: `SELECT * FROM products WHERE productType_ID = ?`,
     insertProduct: `
         INSERT INTO products 
-        (PID, Name, Brand, Price, Description, Status, Image, productType_ID, Shop_ID, Added_By)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (PID, Name, Brand, Price, Description, Status, Image, productType_ID, Added_By)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     updateProduct: `
         UPDATE products SET
@@ -36,8 +32,6 @@ LEFT JOIN
             Description = ?,
             Status = ?,
             Image = ?,
-            productType_ID = ?,
-            Shop_ID = ?,
             Added_By = ?
         WHERE Product_ID = ?
     `,
