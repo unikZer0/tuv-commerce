@@ -4,8 +4,8 @@ const getUsers = require('../../adminCtrl/user/UserCtrl')
 const verifyToken = require('../../controller/tokenhandle/verifyToken')
 const authorizeRole = require('../../middleware/authorizeRole')
 
-router.post('/getusers', verifyToken, authorizeRole(1,2), getUsers.getAllUsersCtrl);
-router.post('/delete/:id', verifyToken, authorizeRole(1,2), getUsers.DeleteUsersCtrl);
-router.post('/update/:id', verifyToken, authorizeRole(1,2), getUsers.UpdateUsersCtrl);
+router.post('/getusers', verifyToken, authorizeRole(1,2,4), getUsers.getAllUsersCtrl);
+router.post('/delete/:id', verifyToken, authorizeRole(1,2,4), getUsers.DeleteUsersCtrl);
+router.post('/update/:id', verifyToken, authorizeRole(1,2,4), getUsers.UpdateUsersCtrl);
 
 module.exports = router
