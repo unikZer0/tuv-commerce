@@ -9,7 +9,14 @@ const getProducts = async (req, res) => {
       const limit = parseInt(req.query.limit) || 5;
       const offset = (page - 1) * limit;
     const [results] = await conn.query(cateQueries.getProductsQuery, [limit, offset]);
-    res.json({ message: sucMessage.seeAll, page, limit, products: results });
+    
+    // Parse the Stock JSON string for each product
+    const productsWithParsedStock = results.map(product => ({
+      ...product,
+      Stock: JSON.parse(product.Stock)
+    }));
+
+    res.json({ message: sucMessage.seeAll, page, limit, products: productsWithParsedStock });
   } catch (error) {
     console.error(error);
     res
@@ -26,7 +33,14 @@ const getCategories = async (req, res) => {
     const [results] = await conn.query(cateQueries.getCateQuery, [ productType_ID,limit, offset,
      
     ]);
-    res.json({ message: sucMessage.seeAll, page, limit, products: results });
+
+    // Parse the Stock JSON string for each product
+    const productsWithParsedStock = results.map(product => ({
+      ...product,
+      Stock: JSON.parse(product.Stock)
+    }));
+
+    res.json({ message: sucMessage.seeAll, page, limit, products: productsWithParsedStock });
   } catch (error) {
     console.error(error);
     res
