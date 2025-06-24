@@ -5,7 +5,7 @@ const {sucMessage,errMessage} = require('../../service/messages')
 
 const getProducts = async (req, res) => {
   try {
-        const page = parseInt(req.query.page) || 1;
+      const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 6;
       const offset = (page - 1) * limit;
     const [results] = await conn.query(cateQueries.getProductsQuery, [limit, offset]);
@@ -26,8 +26,9 @@ const getProducts = async (req, res) => {
 };
 const getCategories = async (req, res) => {
   try {
+      // console.log('Query params:', req.query);
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 6;
         const offset = (page - 1) * limit;
     const productType_ID = req.params.id;
     const [results] = await conn.query(cateQueries.getCateQuery, [ productType_ID,limit, offset,
