@@ -13,5 +13,11 @@ const wishListQueries = {
 `,
 
 }
-module.exports = {productQueries,wishListQueries};
+const searchQueries = {
+  searchProduct: `SELECT * FROM products WHERE Name LIKE ? OR Description LIKE ?`,
+  searchCategory: `SELECT * FROM products WHERE productType_ID = ?`, // Corrected column name
+  searchBrand: `SELECT * FROM products WHERE Brand = ?`, // Corrected column name
+  searchPriceRange: `SELECT * FROM products WHERE Price BETWEEN ? AND ?`,
+};
+module.exports = {productQueries,wishListQueries,searchQueries};
   

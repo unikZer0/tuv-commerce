@@ -2,7 +2,7 @@ const conn = require("../../setting/connection");
 const { orderQuery } = require("./query/orderPageQuery");
 const { v4: uuidv4 } = require("uuid");
 require('dotenv').config();
-const stripe = require("stripe")('sk_test_51RQ0e44c05uxt3S1YswQ1jP45uwZedHiuUaAlYYLQHoEdYvvvdphhP6jEC1KTfQps0Y7SqDIdZuhNB6JWHXT3GnC00btevvoXQ');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 //checkout
 const checkoutCtrl = async (req, res) => {
@@ -148,8 +148,8 @@ const checkoutCtrl = async (req, res) => {
           line_items: lineItems,
           mode: "payment",
           allow_promotion_codes: true,
-          success_url: `http://localhost:8888/success.html?id=${OID}`,
-          cancel_url: `http://localhost:8888/cancel.html?id=${OID}`,
+          success_url: `http://localhost:3000/success.html?id=${OID}`,
+          cancel_url: `http://localhost:3000/cancel.html?id=${OID}`,
         });
         const Tracking_Number = uuidv4().slice(0, 10);
         const shipmentData = {
@@ -254,7 +254,7 @@ const webhookCtrl = async (req,res)=>{
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig,'whsec_04a8cfa28f692e67745d72973e0a4ce92bb04db24a6bea6b5df0e4eee93f969d');
+    event = stripe.webhooks.constructEvent(req.body, sig,process.env.STRIPE_WEBHOOK_SECRET);
 
 
   } catch (err) {

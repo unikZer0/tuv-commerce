@@ -6,6 +6,11 @@ const app = express()
 const port = 3000
 const cors = require('cors')
 
+const webhook = require('./src/router/client/webhook')
+
+//webhook (before bodyParser)
+app.use('/',webhook)
+
 app.use(bodyParser.json())
 app.use(cookiesParser())
 
