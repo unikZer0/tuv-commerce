@@ -5,13 +5,16 @@ const addressQueries = {
     edit:`update address set Village = ? , District = ? , Province =?, Transportation=?,Branch = ? where Address_ID = ? `,
 }
 const orderQuery = {
-    insertOrder:`INSERT INTO orders SET ?`,
-    insertShipment:`INSERT INTO shipment SET ?`,
-    insertCart:`INSERT INTO cart SET ?`,
-    callToDelete:`SELECT Product_ID,Quantity,Size,Color FROM cart WHERE Order_ID = ?`,
-    deleteStock:`UPDATE inventory SET Quantity = Quantity - ? WHERE Product_ID = ? AND  Size = ? AND  Color = ?`,
-    checkStock:`SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`
-}
+  insertOrder: `INSERT INTO orders SET ?`,
+  insertShipment: `INSERT INTO shipment SET ?`,
+  insertCart: `INSERT INTO cart SET ?`,
+  callToDelete: `SELECT Product_ID, Quantity, Size, Color FROM cart WHERE Order_ID = ?`,
+  deleteStock: `UPDATE inventory SET Quantity = Quantity - ? WHERE Product_ID = ? AND Size = ? AND Color = ?`,
+  checkStock: `SELECT Quantity FROM inventory WHERE Product_ID = ? AND Size = ? AND Color = ?`,
+  checkProduct: `SELECT * FROM products WHERE Product_ID = ?` ,
+  actualAmount:`update monthly_targets set Actual_Amount = Actual_Amount + ?`
+};
+
 module.exports = {
     addressQueries,
     orderQuery

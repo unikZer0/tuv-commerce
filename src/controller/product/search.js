@@ -5,37 +5,42 @@ const { productQueries } = require("./query/productQuery");
 // search products
 const searchProducts = async (req, res) => {
   try {
-    const { q, min_price, max_price } = req.query;
-    let query = "SELECT * FROM products WHERE 1=1";
+    // เปลี่ยนจาก req.query เป็น req.body เพื่อรองรับ POST request
+    const { q, min_price, max_price, category } = req.body;
+    
+    // ใช้ query เดียวกับ categoryCtrl เพื่อให้ได้ข้อมูล Stock
+    let query = `
+      SELECT p.*, 
+             CONCAT('[', GROUP_CONCAT(JSON_OBJECT(
+               'Size', i.Size, 
+               'Color', i.Color, 
+               'Quantity', i.Quantity
+             )), ']') as Stock
+      FROM products p
+      LEFT JOIN inventory i ON p.Product_ID = i.Product_ID
+      WHERE 1=1
+    `;
     const queryParams = [];
     const searchBy = [];
 
-    if (q) {
-      // ค้นหาชื่อสินค้าและคำอธิบาย
-      query += " AND (Name LIKE ? OR Description LIKE ?";
-      queryParams.push(`%${q}%`, `%${q}%`);
-      searchBy.push('product name or description');
+    if (q && q.trim() !== '' && q.trim() !== '*') {
+      // ค้นหาชื่อสินค้า, คำอธิบาย และแบรนด์ด้วย LIKE
+      query += " AND (p.Name LIKE ? OR p.Description LIKE ? OR p.Brand LIKE ?";
+      queryParams.push(`%${q}%`, `%${q}%`, `%${q}%`);
+      searchBy.push('product name, description, or brand');
 
       // ถ้า q เป็นตัวเลข → ค้นหาราคา
-      if (!isNaN(q)) {
-        query += " OR Price = ?";
-        queryParams.push(q);
+      if (!isNaN(q) && !isNaN(parseFloat(q))) {
+        query += " OR p.Price = ?";
+        queryParams.push(parseFloat(q));
         searchBy.push('price');
       }
 
-      // ตรวจสอบว่า q ตรงกับแบรนด์ที่มีในฐานข้อมูลหรือไม่
-      const [brandResults] = await conn.query('SELECT * FROM products WHERE Brand = ?', [q]);
-      if (brandResults.length > 0) {
-        query += " OR Brand = ?";
-        queryParams.push(q);
-        searchBy.push('brand');
-      }
-
       // ตรวจสอบว่า q ตรงกับประเภทที่มีในฐานข้อมูลหรือไม่
-      const [categoryResults] = await conn.query('SELECT * FROM product_types WHERE TypeName = ?', [q]);
+      const [categoryResults] = await conn.query('SELECT * FROM product_types WHERE productType_Name LIKE ?', [`%${q}%`]);
       if (categoryResults.length > 0) {
-        query += " OR productType_ID = ?";
-        queryParams.push(categoryResults[0].id); // สมมุติ id คือ primary key ของประเภทสินค้า
+        query += " OR p.productType_ID IN (" + categoryResults.map(() => '?').join(',') + ")";
+        categoryResults.forEach(cat => queryParams.push(cat.productType_ID));
         searchBy.push('category');
       }
 
@@ -44,28 +49,56 @@ const searchProducts = async (req, res) => {
 
     // เพิ่มช่วงราคาถ้ามี
     if (min_price && max_price) {
-      query += " AND Price BETWEEN ? AND ?";
+      query += " AND p.Price BETWEEN ? AND ?";
       queryParams.push(min_price, max_price);
       searchBy.push('price range');
     } else if (min_price) {
-      query += " AND Price >= ?";
+      query += " AND p.Price >= ?";
       queryParams.push(min_price);
       searchBy.push('min price');
     } else if (max_price) {
-      query += " AND Price <= ?";
+      query += " AND p.Price <= ?";
       queryParams.push(max_price);
       searchBy.push('max price');
     }
 
-    const [results] = await conn.query(query, queryParams);
-
-    if (results.length === 0) {
-      return res.status(404).json({ message: "No products found matching your criteria", searchBy });
+    // เพิ่มฟิลเตอร์ประเภทถ้ามี
+    if (category && category.trim() !== '') {
+      query += " AND p.productType_ID = ?";
+      queryParams.push(category);
+      searchBy.push('category filter');
     }
 
-    res.status(200).json({ message: "Search results", searchBy, data: results });
+    // เพิ่ม GROUP BY เพื่อรวม inventory data
+    query += " GROUP BY p.Product_ID ORDER BY p.Name";
+
+    console.log('Search Query:', query);
+    console.log('Search Params:', queryParams);
+
+    const [results] = await conn.query(query, queryParams);
+
+    // Parse Stock JSON for each product
+    const productsWithParsedStock = results.map(product => ({
+      ...product,
+      Stock: product.Stock ? JSON.parse(product.Stock) : []
+    }));
+
+    if (productsWithParsedStock.length === 0) {
+      return res.status(200).json({ 
+        message: "No products found matching your criteria", 
+        searchBy,
+        data: []
+      });
+    }
+
+    res.status(200).json({ 
+      message: "Search results", 
+      searchBy, 
+      count: productsWithParsedStock.length,
+      data: productsWithParsedStock 
+    });
   } catch (error) {
-    console.log(error);
+    console.error('Search error:', error);
     res.status(500).json({ error: "Failed to search products" });
   }
 };

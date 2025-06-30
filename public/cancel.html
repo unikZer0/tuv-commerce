@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .cancel-container {
+            text-align: center;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .cancel-icon {
+            font-size: 50px;
+            color: #dc3545;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        p {
+            color: #666;
+        }
+        .home-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .retry-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="cancel-container">
+        <div class="cancel-icon">&#10008;</div>
+        <h1>Payment Cancelled</h1>
+        <p>Your payment has been cancelled.</p>
+        <p id="order-id"></p> <!-- Placeholder for Order ID -->
+        <p>You can retry your payment or contact support if you need assistance.</p>
+        
+        <div>
+            <a href="/" class="home-button">Go Home</a>
+            <a href="/cart" class="retry-button">Retry Payment</a>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id');
+        if (orderId) {
+            document.getElementById('order-id').innerText = 'Order ID: ' + orderId;
+        }
+    </script>
+</body>
+</html> 

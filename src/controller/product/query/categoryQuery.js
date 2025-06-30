@@ -26,9 +26,13 @@ getProductsQuery :`SELECT
     p.Brand,
     p.Image,
     p.Price,
-    GROUP_CONCAT(DISTINCT i.Size ORDER BY i.Size SEPARATOR ', ') AS Sizes,
-    GROUP_CONCAT(DISTINCT i.Color ORDER BY i.Color SEPARATOR ', ') AS Colors,
-    SUM(i.Quantity) AS Total_Quantity
+    CONCAT('[', GROUP_CONCAT(
+        CONCAT(
+            '{"Size":"', i.Size, '",',
+            '"Color":"', i.Color, '",',
+            '"Quantity":', i.Quantity, '}'
+        )
+    ), ']') AS Stock
 FROM 
     products p
 JOIN 

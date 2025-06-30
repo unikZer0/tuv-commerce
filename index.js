@@ -1,43 +1,36 @@
-const express = require('express')
+const express = require('express');
+const bodyParser = require('body-parser');
+const cookiesParser = require('cookie-parser');
+const cors = require('cors');
 
-const bodyParser = require('body-parser')
-const cookiesParser = require('cookie-parser')
-const app = express()
-const port = 3000
-const cors = require('cors')
+const app = express();
+const port = 3000;
 
-const webhook = require('./src/router/client/webhook')
-app.use('/api/',webhook);
-app.use(bodyParser.json())
+const webhook = require('./src/router/client/webhook');
+const authRoute = require('./src/router/client/auth');
+const products = require('./src/router/client/product');
+const users = require('./src/router/admin/user');
+const product_t = require('./src/router/admin/product');
 
-
-
-
-//admin route
-const users = require('./src/router/admin/user')
-//admin product
-const product_t = require('./src/router/admin/product')
-app.use('/api/admin/',product_t)
-
-//get users
-app.use('/api/admin/',users)
-
-//call client route
+app.use(cors());
+app.use('/', webhook);
 
 
-const authRoute = require('./src/router/client/auth')
-const products = require('./src/router/client/product')
+app.use(bodyParser.json());
+app.use(cookiesParser());
 
 
-//auth
-app.use('/api/auth/',authRoute)
+app.use(express.static('public'));
 
+//  Admin routes
+app.use('/api/admin/', product_t);
+app.use('/api/admin/', users);
 
-//product
-app.use('/api/',products)
+//  Client routes
+app.use('/api/auth/', authRoute);
+app.use('/api/', products);
 
-
-
-app.listen(port,()=>{
-    console.log(`running at http://localhost:${port}`);
-})
+//  Start server
+app.listen(port, () => {
+  console.log(`Running at http://localhost:${port}`);
+});
