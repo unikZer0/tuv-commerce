@@ -31,5 +31,10 @@ router.post('/editaddress/:id',verifyToken,addresses.editAddressCtrl)
 //checkout 
 router.post('/checkout',verifyToken,checkouts.checkoutCtrl)
 
+// orders management
+router.get('/orders',verifyToken,checkouts.getUserOrders)
+router.get('/order/:orderId',verifyToken,checkouts.checkOrderStatus)
+router.post('/order/:orderId/repay',verifyToken,checkouts.repayOrder)
+
 
 module.exports = router

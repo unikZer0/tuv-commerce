@@ -14,6 +14,8 @@ app.use('/',webhook)
 app.use(bodyParser.json())
 app.use(cookiesParser())
 
+// Serve static files from public directory
+app.use(express.static('public'))
 
 app.use(cors())
 

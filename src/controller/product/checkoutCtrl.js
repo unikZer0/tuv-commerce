@@ -340,7 +340,171 @@ const webhookCtrl = async (req,res)=>{
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+// ตรวจสอบสถานะ order
+const checkOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const User_ID = req.user.userId;
+
+    const [orderResult] = await conn.query(
+      `SELECT o.*, p.Payment_Status, p.Payment_Method, s.Ship_Status, s.Tracking_Number 
+       FROM orders o 
+       LEFT JOIN payments p ON o.Order_ID = p.Order_ID 
+       LEFT JOIN shipment s ON o.Shipment_ID = s.Shipment_ID
+       WHERE o.OID = ? AND o.User_ID = ?`,
+      [orderId, User_ID]
+    );
+
+    if (!orderResult.length) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const order = orderResult[0];
+    
+    // ดึงรายการสินค้าในคำสั่งซื้อ
+    const [cartItems] = await conn.query(
+      `SELECT c.*, p.Name, p.Brand, p.Image 
+       FROM cart c
+       LEFT JOIN products p ON c.Product_ID = p.Product_ID
+       WHERE c.Order_ID = ?`,
+      [order.Order_ID]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        order: {
+          ...order,
+          items: cartItems
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Check order status error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// จ่ายเงินใหม่สำหรับ pending orders
+const repayOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const User_ID = req.user.userId;
+
+    // ตรวจสอบ order ที่เป็น pending
+    const [orderResult] = await conn.query(
+      'SELECT * FROM orders WHERE OID = ? AND User_ID = ? AND Order_Status = "pending"',
+      [orderId, User_ID]
+    );
+
+    if (!orderResult.length) {
+      return res.status(404).json({ message: "Pending order not found" });
+    }
+
+    const order = orderResult[0];
+
+    // ดึงรายการสินค้าจาก cart
+    const [cartItems] = await conn.query(
+      `SELECT c.*, p.Name, p.Description 
+       FROM cart c
+       LEFT JOIN products p ON c.Product_ID = p.Product_ID
+       WHERE c.Order_ID = ?`,
+      [order.Order_ID]
+    );
+
+    if (!cartItems.length) {
+      return res.status(400).json({ message: "No items found in order" });
+    }
+
+    // สร้าง line items สำหรับ Stripe
+    const lineItems = cartItems.map(item => ({
+      price_data: {
+        currency: "lak",
+        product_data: {
+          name: item.Name,
+          description: item.Description || '',
+        },
+        unit_amount: item.Unit_Price * 100,
+      },
+      quantity: item.Quantity,
+    }));
+
+    // สร้าง Stripe session ใหม่
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      allow_promotion_codes: true,
+      success_url: `http://localhost:3000/success.html?id=${orderId}`,
+      cancel_url: `http://localhost:3000/cancel.html?id=${orderId}`,
+    });
+
+    // อัปเดต session_id ใหม่
+    await conn.query(
+      'UPDATE orders SET session_id = ?, updated_at = NOW() WHERE Order_ID = ?',
+      [session.id, order.Order_ID]
+    );
+
+    res.json({
+      success: true,
+      message: "New payment session created",
+      session_url: session.url,
+      session_id: session.id
+    });
+
+  } catch (error) {
+    console.error("Repay order error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ดึงรายการ orders ของผู้ใช้
+const getUserOrders = async (req, res) => {
+  try {
+    const User_ID = req.user.userId;
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const [orders] = await conn.query(
+      `SELECT o.*, p.Payment_Status, s.Ship_Status 
+       FROM orders o 
+       LEFT JOIN payments p ON o.Order_ID = p.Order_ID 
+       LEFT JOIN shipment s ON o.Shipment_ID = s.Shipment_ID
+       WHERE o.User_ID = ?
+       ORDER BY o.Order_Date DESC
+       LIMIT ? OFFSET ?`,
+      [User_ID, parseInt(limit), parseInt(offset)]
+    );
+
+    // นับจำนวน orders ทั้งหมด
+    const [countResult] = await conn.query(
+      'SELECT COUNT(*) as total FROM orders WHERE User_ID = ?',
+      [User_ID]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(countResult[0].total / limit),
+          totalOrders: countResult[0].total
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Get user orders error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   checkoutCtrl,
-  webhookCtrl
+  webhookCtrl,
+  checkOrderStatus,
+  repayOrder,
+  getUserOrders
 };
