@@ -65,7 +65,7 @@ const rawUuid = uuidv4();
            return res.status(400).json({message:errMessage.exists})
           }
 //hash Password
-          const UID = await 'UID' + rawUuid.replace(/-/g,'').slice(0, 10);
+          const UID =  'UID' + rawUuid.replace(/-/g,'').slice(0, 10);
           const salt = await bcrypt.genSalt(10)
           const hashPwd = await bcrypt.hash(Password , salt)
 //free field 

@@ -7,7 +7,6 @@ const checkouts = require('../../controller/product/checkoutCtrl')
 const Products = require('../../controller/product/productCtrl');
 const ProductsSearch = require('../../controller/product/search')
 const verifyToken = require('../../controller/tokenhandle/verifyToken')
-
 //category
 router.post('/categories/',verifyToken,categories.getProducts);
 router.post('/categories/:id',verifyToken,categories.getCategories);
