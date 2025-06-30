@@ -5,7 +5,6 @@ const cookiesParser = require('cookie-parser')
 const app = express()
 const port = 3000
 const cors = require('cors')
-app.use(cors())
 
 const webhook = require('./src/router/client/webhook')
 app.use('/api/',webhook);
@@ -16,9 +15,13 @@ app.use(bodyParser.json())
 
 //admin route
 const users = require('./src/router/admin/user')
+//admin product
+const product_t = require('./src/router/admin/product')
+app.use('/api/admin/',product_t)
 
 //get users
 app.use('/api/admin/',users)
+
 //call client route
 
 
@@ -34,7 +37,7 @@ app.use('/api/auth/',authRoute)
 app.use('/api/',products)
 
 
+
 app.listen(port,()=>{
     console.log(`running at http://localhost:${port}`);
-    
 })
