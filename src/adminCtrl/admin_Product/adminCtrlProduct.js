@@ -28,7 +28,7 @@ const createProductCtrl = async (req, res) => {
     if (!PID) {
       return res.status(400).json({ message: errMessage.invalidData });
     }
-    const { Name, Brand, Price, Description, Status, Image, productType_ID, Shop_ID, Added_By } = req.body;
+    const { Name, Brand, Price, Description, Status, Image, productType_ID, Added_By } = req.body;
 
     // ตรวจสอบข้อมูลที่จำเป็น
     if (!PID || !Name || !Price || !productType_ID) {
@@ -36,7 +36,7 @@ const createProductCtrl = async (req, res) => {
     }
 
     const [result] = await conn.query(productQueries.insertProduct, [
-      PID, Name, Brand, Price, Description, Status, Image, productType_ID, Shop_ID, Added_By
+      PID, Name, Brand, Price, Description, Status, Image, productType_ID, Added_By
     ]);
 
     return res.status(201).json({
@@ -56,7 +56,6 @@ const createProductCtrl = async (req, res) => {
 };
 
 // อัพเดทข้อมูลสินค้า
-
 const updateProductCtrl = async (req, res) => {
   const id = req.params.id;
   // ตรวจสอบว่า Product_ID ถูกส่งมาหรือไม่
@@ -82,7 +81,6 @@ const updateProductCtrl = async (req, res) => {
       Status,
       Image,
       productType_ID,
-      Shop_ID,
       Added_By,
     } = req.body;
 
@@ -95,7 +93,7 @@ const updateProductCtrl = async (req, res) => {
     await conn.query(
       `UPDATE products 
        SET Name = ?, Brand = ?, Price = ?, Description = ?, Status = ?, Image = ?, 
-           productType_ID = ?, Shop_ID = ?, Added_By = ?
+           productType_ID = ?, Added_By = ?
        WHERE Product_ID = ?`,
       [
         Name,
@@ -105,7 +103,6 @@ const updateProductCtrl = async (req, res) => {
         Status,
         Image,
         productType_ID,
-        Shop_ID,
         Added_By,
         id,
       ]
@@ -123,7 +120,6 @@ const updateProductCtrl = async (req, res) => {
     return res.status(500).json({ message: "ເກິດຂໍ້ຜິດພາດກັບເຊີບເວີ" });
   }
 };
-
 
 // ลบสินค้า
 const deleteProductCtrl = async (req, res) => {
@@ -157,8 +153,6 @@ const deleteProductCtrl = async (req, res) => {
   }
 };
 
-
-
 // ค้นหาสินค้าตามชื่
 const searchProductsByNameCtrl = async (req, res) => {
   try {
@@ -172,10 +166,9 @@ const searchProductsByNameCtrl = async (req, res) => {
     const [results] = await conn.query(
       `SELECT p.Product_ID, p.PID, p.Name, p.Brand, p.Price, p.Description, 
               p.Status, p.Image, pt.productType_Name AS productType, 
-              s.Shop_Name AS shopName, p.Added_By
+              p.Added_By
        FROM products p
        JOIN product_types pt ON p.productType_ID = pt.productType_ID
-       JOIN shops s ON p.Shop_ID = s.Shop_ID
        WHERE p.Name LIKE ?`,
       [`%${name}%`] // ใช้ LIKE เพื่อค้นหาคำที่มีบางส่วนเหมือน
     );
@@ -191,8 +184,6 @@ const searchProductsByNameCtrl = async (req, res) => {
   }
 };
 
-
-
 // ค้นหาสินค้าตามราคา
 const searchProductsByPriceRangeCtrl = async (req, res) => {
   try {
@@ -207,10 +198,9 @@ const searchProductsByPriceRangeCtrl = async (req, res) => {
     const [results] = await conn.query(
       `SELECT p.Product_ID, p.PID, p.Name, p.Brand, p.Price, p.Description, 
               p.Status, p.Image, pt.productType_Name AS productType, 
-              s.Shop_Name AS shopName, p.Added_By
+              p.Added_By
        FROM products p
        JOIN product_types pt ON p.productType_ID = pt.productType_ID
-       JOIN shops s ON p.Shop_ID = s.Shop_ID
        WHERE p.Price BETWEEN ? AND ?`,
       [minPrice, maxPrice]
     );

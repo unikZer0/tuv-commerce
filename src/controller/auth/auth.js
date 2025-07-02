@@ -12,6 +12,7 @@ const loginCtrl = async (req,res)=>{
         if (!identifier || !Password) {
             return res.status(400).json({ message: "Missing identifier or Password" });
           }
+          
           const [results] = await conn.query(loginQuery,[identifier,identifier])
         if(results.length === 0) {
             return res.status(401).json({message :errMessage.login});
