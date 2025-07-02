@@ -2,7 +2,7 @@ const conn = require("../../setting/connection");
 const { orderQuery } = require("./query/orderPageQuery");
 const { v4: uuidv4 } = require("uuid");
 require('dotenv').config();
-const stripe = require("stripe")('sk_test_51RQ0e44c05uxt3S1YswQ1jP45uwZedHiuUaAlYYLQHoEdYvvvdphhP6jEC1KTfQps0Y7SqDIdZuhNB6JWHXT3GnC00btevvoXQ');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 //checkout
 const checkoutCtrl = async (req, res) => {
