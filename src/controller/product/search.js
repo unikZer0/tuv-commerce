@@ -6,7 +6,7 @@ const { productQueries } = require("./query/productQuery");
 const searchProducts = async (req, res) => {
   try {
     // เปลี่ยนจาก req.query เป็น req.body เพื่อรองรับ POST request
-    const { q, min_price, max_price, category } = req.body;
+    const { q, category, productType, brand, sort } = req.body;
     
     // ใช้ query เดียวกับ categoryCtrl เพื่อให้ได้ข้อมูล Stock
     let query = `
@@ -47,30 +47,38 @@ const searchProducts = async (req, res) => {
       query += ")";
     }
 
-    // เพิ่มช่วงราคาถ้ามี
-    if (min_price && max_price) {
-      query += " AND p.Price BETWEEN ? AND ?";
-      queryParams.push(min_price, max_price);
-      searchBy.push('price range');
-    } else if (min_price) {
-      query += " AND p.Price >= ?";
-      queryParams.push(min_price);
-      searchBy.push('min price');
-    } else if (max_price) {
-      query += " AND p.Price <= ?";
-      queryParams.push(max_price);
-      searchBy.push('max price');
-    }
-
-    // เพิ่มฟิลเตอร์ประเภทถ้ามี
+    // เพิ่มฟิลเตอร์ประเภทถ้ามี (legacy category support)
     if (category && category.trim() !== '') {
       query += " AND p.productType_ID = ?";
       queryParams.push(category);
       searchBy.push('category filter');
     }
 
+    // เพิ่มฟิลเตอร์ product type ถ้ามี
+    if (productType && productType.trim() !== '') {
+      query += " AND p.productType_ID = ?";
+      queryParams.push(productType);
+      searchBy.push('product type filter');
+    }
+
+    // เพิ่มฟิลเตอร์ brand ถ้ามี
+    if (brand && brand.trim() !== '') {
+      query += " AND p.Brand = ?";
+      queryParams.push(brand);
+      searchBy.push('brand filter');
+    }
+
     // เพิ่ม GROUP BY เพื่อรวม inventory data
-    query += " GROUP BY p.Product_ID ORDER BY p.Name";
+    query += " GROUP BY p.Product_ID";
+    
+    // เพิ่มการเรียงลำดับตามราคา
+    if (sort === 'asc') {
+      query += " ORDER BY p.Price ASC";
+    } else if (sort === 'desc') {
+      query += " ORDER BY p.Price DESC";
+    } else {
+      query += " ORDER BY p.Name";
+    }
 
     console.log('Search Query:', query);
     console.log('Search Params:', queryParams);

@@ -13,6 +13,7 @@ router.get('/products/search', verifyToken, authorizeRole(1,2,4), adminProduct.s
 router.get('/products/searchByPrice', verifyToken, authorizeRole(1,2,4), adminProduct.searchProductsByPriceRangeCtrl);
 router.get('/product-types', verifyToken, authorizeRole(1,2,4), adminProduct.getAllProductTypesCtrl);
 
+
 // TODO: Add route for search by product type
 
 module.exports = router;

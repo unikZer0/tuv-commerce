@@ -11,6 +11,10 @@ const verifyToken = require('../../controller/tokenhandle/verifyToken')
 router.post('/categories/',verifyToken,categories.getProducts);
 router.post('/categories/:id',verifyToken,categories.getCategories);
 
+// Get product types and brands dynamically
+router.get('/product-types',verifyToken,categories.getProductTypes);
+router.get('/brands',verifyToken,categories.getBrands);
+
 //product 
 
 router.post('/product/:id',verifyToken,Products.getProductCtrl);
@@ -34,6 +38,8 @@ router.post('/checkout',verifyToken,checkouts.checkoutCtrl)
 router.get('/orders',verifyToken,checkouts.getUserOrders)
 router.get('/order/:orderId',verifyToken,checkouts.checkOrderStatus)
 router.post('/order/:orderId/repay',verifyToken,checkouts.repayOrder)
+router.post('/order/:orderId/cancel',verifyToken,checkouts.cancelOrder)
+router.get('/order/:orderId/timeline',verifyToken,checkouts.getShippingTimeline)
 
 
 module.exports = router

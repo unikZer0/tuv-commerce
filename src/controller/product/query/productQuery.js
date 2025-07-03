@@ -1,4 +1,3 @@
-
 const productQueries ={
   showProduct:`SELECT * FROM products WHERE Product_ID = ?`,
 }
@@ -17,7 +16,16 @@ const searchQueries = {
   searchProduct: `SELECT * FROM products WHERE Name LIKE ? OR Description LIKE ?`,
   searchCategory: `SELECT * FROM products WHERE productType_ID = ?`, // Corrected column name
   searchBrand: `SELECT * FROM products WHERE Brand = ?`, // Corrected column name
-  searchPriceRange: `SELECT * FROM products WHERE Price BETWEEN ? AND ?`,
+  // Price sorting queries
+  sortPriceAsc: `SELECT * FROM products ORDER BY Price ASC`,
+  sortPriceDesc: `SELECT * FROM products ORDER BY Price DESC`,
+  // Combined search with sorting
+  searchProductSortAsc: `SELECT * FROM products WHERE Name LIKE ? OR Description LIKE ? ORDER BY Price ASC`,
+  searchProductSortDesc: `SELECT * FROM products WHERE Name LIKE ? OR Description LIKE ? ORDER BY Price DESC`,
+  searchCategorySortAsc: `SELECT * FROM products WHERE productType_ID = ? ORDER BY Price ASC`,
+  searchCategorySortDesc: `SELECT * FROM products WHERE productType_ID = ? ORDER BY Price DESC`,
+  searchBrandSortAsc: `SELECT * FROM products WHERE Brand = ? ORDER BY Price ASC`,
+  searchBrandSortDesc: `SELECT * FROM products WHERE Brand = ? ORDER BY Price DESC`,
 };
 module.exports = {productQueries,wishListQueries,searchQueries};
   

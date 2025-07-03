@@ -361,6 +361,17 @@ const checkOrderStatus = async (req, res) => {
 
     const order = orderResult[0];
     
+    // แปลงวันที่
+    if (order.Order_Date) {
+      order.Order_Date = new Date(order.Order_Date).toISOString();
+    }
+    if (order.created_at) {
+      order.created_at = new Date(order.created_at).toISOString();
+    }
+    if (order.updated_at) {
+      order.updated_at = new Date(order.updated_at).toISOString();
+    }
+    
     // ดึงรายการสินค้าในคำสั่งซื้อ
     const [cartItems] = await conn.query(
       `SELECT c.*, p.Name, p.Brand, p.Image 
@@ -369,6 +380,13 @@ const checkOrderStatus = async (req, res) => {
        WHERE c.Order_ID = ?`,
       [order.Order_ID]
     );
+
+    // แปลงวันที่สำหรับ items
+    cartItems.forEach(item => {
+      if (item.Added_at) {
+        item.Added_at = new Date(item.Added_at).toISOString();
+      }
+    });
 
     res.json({
       success: true,
@@ -459,7 +477,7 @@ const repayOrder = async (req, res) => {
   }
 };
 
-// ดึงรายการ orders ของผู้ใช้
+// ดึงรายการ orders ของผู้ใช้ พร้อมรายการสินค้า
 const getUserOrders = async (req, res) => {
   try {
     const User_ID = req.user.userId;
@@ -467,7 +485,7 @@ const getUserOrders = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const [orders] = await conn.query(
-      `SELECT o.*, p.Payment_Status, s.Ship_Status 
+      `SELECT o.*, p.Payment_Status, p.Payment_Method, s.Ship_Status, s.Tracking_Number, s.Ship_Date
        FROM orders o 
        LEFT JOIN payments p ON o.Order_ID = p.Order_ID 
        LEFT JOIN shipment s ON o.Shipment_ID = s.Shipment_ID
@@ -476,6 +494,41 @@ const getUserOrders = async (req, res) => {
        LIMIT ? OFFSET ?`,
       [User_ID, parseInt(limit), parseInt(offset)]
     );
+
+    // ดึงรายการสินค้าสำหรับแต่ละ order และแปลงวันที่
+    for (let order of orders) {
+      // แปลงวันที่ให้อยู่ในรูปแบบ ISO string
+      if (order.Order_Date) {
+        order.Order_Date = new Date(order.Order_Date).toISOString();
+      }
+      if (order.Ship_Date) {
+        order.Ship_Date = new Date(order.Ship_Date).toISOString();
+      }
+      if (order.created_at) {
+        order.created_at = new Date(order.created_at).toISOString();
+      }
+      if (order.updated_at) {
+        order.updated_at = new Date(order.updated_at).toISOString();
+      }
+
+      const [items] = await conn.query(
+        `SELECT c.*, p.Name, p.Brand, p.Image, p.Description
+         FROM cart c
+         LEFT JOIN products p ON c.Product_ID = p.Product_ID
+         WHERE c.Order_ID = ?
+         ORDER BY c.Added_at DESC`,
+        [order.Order_ID]
+      );
+      
+      // แปลงวันที่สำหรับ items ด้วย
+      items.forEach(item => {
+        if (item.Added_at) {
+          item.Added_at = new Date(item.Added_at).toISOString();
+        }
+      });
+      
+      order.items = items;
+    }
 
     // นับจำนวน orders ทั้งหมด
     const [countResult] = await conn.query(
@@ -501,10 +554,259 @@ const getUserOrders = async (req, res) => {
   }
 };
 
+// ยกเลิก order (สำหรับ pending orders เท่านั้น)
+const cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const User_ID = req.user.userId;
+
+    // ตรวจสอบ order ที่เป็น pending
+    const [orderResult] = await conn.query(
+      'SELECT * FROM orders WHERE OID = ? AND User_ID = ? AND Order_Status = "pending"',
+      [orderId, User_ID]
+    );
+
+    if (!orderResult.length) {
+      return res.status(404).json({ message: "Pending order not found or already processed" });
+    }
+
+    const order = orderResult[0];
+
+    // คืนสต็อกสินค้า
+    const [cartItems] = await conn.query(
+      'SELECT Product_ID, Quantity, Size, Color FROM cart WHERE Order_ID = ?',
+      [order.Order_ID]
+    );
+
+    for (const item of cartItems) {
+      // เพิ่มสต็อกกลับเข้าไป
+      await conn.query(
+        `UPDATE inventory SET Quantity = Quantity + ? 
+         WHERE Product_ID = ? AND Size = ? AND Color = ?`,
+        [item.Quantity, item.Product_ID, item.Size, item.Color]
+      );
+    }
+
+    // อัปเดตสถานะ order เป็น cancelled
+    await conn.query(
+      'UPDATE orders SET Order_Status = "cancelled", updated_at = NOW() WHERE Order_ID = ?',
+      [order.Order_ID]
+    );
+
+    // อัปเดตสถานะ shipment เป็น cancelled
+    if (order.Shipment_ID) {
+      await conn.query(
+        'UPDATE shipment SET Ship_Status = "cancelled" WHERE Shipment_ID = ?',
+        [order.Shipment_ID]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: "Order cancelled successfully"
+    });
+
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ดึงสถานะ timeline ของการขนส่ง
+const getShippingTimeline = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const User_ID = req.user.userId;
+
+    const [orderResult] = await conn.query(
+      `SELECT o.*, s.Ship_Status, s.Tracking_Number, s.Ship_Date
+       FROM orders o 
+       LEFT JOIN shipment s ON o.Shipment_ID = s.Shipment_ID
+       WHERE o.OID = ? AND o.User_ID = ?`,
+      [orderId, User_ID]
+    );
+
+    if (!orderResult.length) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const order = orderResult[0];
+    
+    // แปลงวันที่ก่อนส่งใน timeline
+    if (order.Order_Date) {
+      order.Order_Date = new Date(order.Order_Date).toISOString();
+    }
+    if (order.Ship_Date) {
+      order.Ship_Date = new Date(order.Ship_Date).toISOString();
+    }
+    if (order.updated_at) {
+      order.updated_at = new Date(order.updated_at).toISOString();
+    }
+    
+    // สร้าง timeline ตามสถานะ order และ shipment
+    const timeline = [];
+    
+    // สถานะการสั่งซื้อ
+    timeline.push({
+      status: "ordered",
+      title: "คำสั่งซื้อถูกสร้าง",
+      description: `รหัสคำสั่งซื้อ: ${order.OID}`,
+      timestamp: order.Order_Date,
+      completed: true,
+      icon: "shopping_cart"
+    });
+
+    // สถานะการชำระเงิน
+    if (order.Order_Status === "completed") {
+      timeline.push({
+        status: "paid",
+        title: "ชำระเงินเรียบร้อย",
+        description: "ได้รับการชำระเงินแล้ว",
+        timestamp: order.Order_Date,
+        completed: true,
+        icon: "payment"
+      });
+    } else if (order.Order_Status === "pending") {
+      timeline.push({
+        status: "pending_payment",
+        title: "รอการชำระเงิน",
+        description: "กรุณาชำระเงินเพื่อดำเนินการต่อ",
+        timestamp: null,
+        completed: false,
+        icon: "schedule"
+      });
+    } else if (order.Order_Status === "cancelled") {
+      timeline.push({
+        status: "cancelled",
+        title: "คำสั่งซื้อถูกยกเลิก",
+        description: "คำสั่งซื้อนี้ถูกยกเลิกแล้ว",
+        timestamp: order.updated_at || order.Order_Date,
+        completed: true,
+        icon: "cancel",
+        isError: true
+      });
+      
+      return res.json({
+        success: true,
+        data: { timeline }
+      });
+    }
+
+    // สถานะการจัดส่ง
+    if (order.Ship_Status) {
+      switch (order.Ship_Status) {
+        case "preparing":
+          timeline.push({
+            status: "preparing",
+            title: "กำลังเตรียมสินค้า",
+            description: "เรากำลังเตรียมสินค้าของคุณ",
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "inventory"
+          });
+          timeline.push({
+            status: "shipping",
+            title: "กำลังจัดส่ง",
+            description: `หมายเลขติดตาม: ${order.Tracking_Number || 'กำลังออกหมายเลข'}`,
+            timestamp: null,
+            completed: false,
+            icon: "local_shipping"
+          });
+          break;
+          
+        case "shipped":
+          timeline.push({
+            status: "preparing",
+            title: "กำลังเตรียมสินค้า",
+            description: "เตรียมสินค้าเรียบร้อย",
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "inventory"
+          });
+          timeline.push({
+            status: "shipping",
+            title: "กำลังจัดส่ง",
+            description: `หมายเลขติดตาม: ${order.Tracking_Number}`,
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "local_shipping"
+          });
+          timeline.push({
+            status: "delivered",
+            title: "จัดส่งเรียบร้อย",
+            description: "สินค้าถึงที่หมายแล้ว",
+            timestamp: null,
+            completed: false,
+            icon: "check_circle"
+          });
+          break;
+          
+        case "delivered":
+          timeline.push({
+            status: "preparing",
+            title: "เตรียมสินค้า",
+            description: "เตรียมสินค้าเรียบร้อย",
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "inventory"
+          });
+          timeline.push({
+            status: "shipping",
+            title: "จัดส่งแล้ว",
+            description: `หมายเลขติดตาม: ${order.Tracking_Number}`,
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "local_shipping"
+          });
+                     timeline.push({
+             status: "delivered",
+             title: "จัดส่งเรียบร้อย",
+             description: "สินค้าถึงที่หมายแล้ว",
+             timestamp: new Date().toISOString(), // ใช้เวลาปัจจุบันหากไม่มีข้อมูล
+             completed: true,
+             icon: "check_circle"
+           });
+          break;
+          
+        case "cancelled":
+          timeline.push({
+            status: "cancelled",
+            title: "การจัดส่งถูกยกเลิก",
+            description: "การจัดส่งถูกยกเลิก",
+            timestamp: order.Ship_Date,
+            completed: true,
+            icon: "cancel",
+            isError: true
+          });
+          break;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { 
+        timeline,
+        order: {
+          oid: order.OID,
+          status: order.Order_Status,
+          ship_status: order.Ship_Status,
+          tracking_number: order.Tracking_Number
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Get shipping timeline error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   checkoutCtrl,
   webhookCtrl,
   checkOrderStatus,
   repayOrder,
-  getUserOrders
+  getUserOrders,
+  cancelOrder,
+  getShippingTimeline
 };
