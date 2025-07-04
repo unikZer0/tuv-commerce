@@ -31,6 +31,7 @@ router.post('/deleteWishlist/:id',verifyToken,wishlists.deletetWishlistCtrl);
 router.post('/address',verifyToken,addresses.showAddressCtrl)
 router.post('/insertaddress',verifyToken,addresses.insertAddressCtrl)
 router.post('/editaddress/:id',verifyToken,addresses.editAddressCtrl)
+router.delete('/address/:id',verifyToken,addresses.deleteAddressCtrl)
 //checkout 
 router.post('/checkout',verifyToken,checkouts.checkoutCtrl)
 

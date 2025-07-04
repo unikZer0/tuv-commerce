@@ -48,13 +48,88 @@ const insertAddressCtrl = async (req, res) => {
   }
 };
 const editAddressCtrl = async (req,res)=>{
-  const Address_ID = req.params.id;
-  const {Village,District,Province,Transportation,Branch}= req.body
-  const [result] = await conn.query(addressQueries.edit,[Village,District,Province,Transportation,Branch,Address_ID])
-  res.status(200).json({message:"address updated successfully"})
+  try {
+    const Address_ID = req.params.id;
+    const User_ID = req.user.userId;
+    const {Village,District,Province,Transportation,Branch}= req.body
+    
+    // Verify that the address belongs to the user
+    const [checkOwnership] = await conn.query(
+      'SELECT User_ID FROM address WHERE Address_ID = ?', 
+      [Address_ID]
+    );
+    
+    if (checkOwnership.length === 0) {
+      return res.status(404).json({message: "Address not found"});
+    }
+    
+    if (checkOwnership[0].User_ID !== User_ID) {
+      return res.status(403).json({message: "You don't have permission to edit this address"});
+    }
+    
+    const [result] = await conn.query(addressQueries.edit,[Village,District,Province,Transportation,Branch,Address_ID])
+    res.status(200).json({message:"Address updated successfully", data: result})
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: errMessage.server})
+  }
 }
+
+const deleteAddressCtrl = async (req, res) => {
+  try {
+    const Address_ID = req.params.id;
+    const User_ID = req.user.userId;
+    
+    // Verify that the address belongs to the user
+    const [checkOwnership] = await conn.query(
+      'SELECT User_ID FROM address WHERE Address_ID = ?', 
+      [Address_ID]
+    );
+    
+    if (checkOwnership.length === 0) {
+      return res.status(404).json({message: "Address not found"});
+    }
+    
+    if (checkOwnership[0].User_ID !== User_ID) {
+      return res.status(403).json({message: "You don't have permission to delete this address"});
+    }
+    
+    // Check if this address is being used in any orders
+    const [orderCheck] = await conn.query(
+      'SELECT COUNT(*) as count FROM orders WHERE Address_ID = ?',
+      [Address_ID]
+    );
+    
+    if (orderCheck[0].count > 0) {
+      return res.status(400).json({
+        message: "Cannot delete address. It is being used in existing orders."
+      });
+    }
+    
+    // Delete the address
+    const [result] = await conn.query(
+      'DELETE FROM address WHERE Address_ID = ?',
+      [Address_ID]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({message: "Address not found"});
+    }
+    
+    res.status(200).json({
+      message: "Address deleted successfully",
+      data: result
+    });
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: errMessage.server});
+  }
+}
+
 module.exports ={
     insertAddressCtrl,
     showAddressCtrl,
-    editAddressCtrl
+    editAddressCtrl,
+    deleteAddressCtrl
 }
