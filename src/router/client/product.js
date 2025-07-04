@@ -16,9 +16,11 @@ router.get('/product-types',verifyToken,categories.getProductTypes);
 router.get('/brands',verifyToken,categories.getBrands);
 
 //product 
-
 router.post('/product/:id',verifyToken,Products.getProductCtrl);
 router.post('/searchproducts',verifyToken,ProductsSearch.searchProducts);
+// Popular & Latest products
+router.get('/products/popular', verifyToken, Products.getPopularProducts);
+router.get('/products/latest', verifyToken, Products.getLatestProducts);
 //wishlist
 
 router.post('/showWishlist',verifyToken,wishlists.showWishlist);

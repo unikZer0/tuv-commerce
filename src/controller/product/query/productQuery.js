@@ -1,5 +1,20 @@
 const productQueries ={
   showProduct:`SELECT * FROM products WHERE Product_ID = ?`,
+  // Popular products: by most reviews (top 8)
+  getPopularProducts: `
+    SELECT p.*, COUNT(r.Review_ID) as reviewCount
+    FROM products p
+    LEFT JOIN reviews r ON p.Product_ID = r.Product_ID
+    GROUP BY p.Product_ID
+    ORDER BY reviewCount DESC, p.Product_ID DESC
+    LIMIT 8
+  `,
+  // Latest products: by Product_ID (top 8 newest)
+  getLatestProducts: `
+    SELECT * FROM products
+    ORDER BY Product_ID DESC
+    LIMIT 8
+  `
 }
 const wishListQueries = {
   showAll : `SELECT * FROM wishlist`,

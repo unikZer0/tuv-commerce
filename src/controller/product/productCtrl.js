@@ -1,3 +1,25 @@
+// ================= POPULAR & LATEST PRODUCTS =================
+// Get popular products (by most reviews)
+const getPopularProducts = async (req, res) => {
+    try {
+        const [results] = await conn.query(productQueries.getPopularProducts);
+        res.status(200).json({ message: 'Popular products retrieved successfully', data: results });
+    } catch (error) {
+        console.error('Error getting popular products:', error);
+        res.status(500).json({ error: 'Failed to get popular products' });
+    }
+};
+
+// Get latest products (by newest)
+const getLatestProducts = async (req, res) => {
+    try {
+        const [results] = await conn.query(productQueries.getLatestProducts);
+        res.status(200).json({ message: 'Latest products retrieved successfully', data: results });
+    } catch (error) {
+        console.error('Error getting latest products:', error);
+        res.status(500).json({ error: 'Failed to get latest products' });
+    }
+};
 const conn = require('../../setting/connection');
 const {cateQueries} = require('./query/categoryQuery')
 const {productQueries,wishListQueries,reviewQueries} = require('./query/productQuery')
@@ -68,7 +90,7 @@ const insertWishlistCtrl = async (req,res) =>{
 const deletetWishlistCtrl = async (req,res) =>{
     try {
         const Product_ID = req.params.id;
-        const [results] = await conn.query(wishListQueries.delete,[Product_ID])
+        await conn.query(wishListQueries.delete,[Product_ID])
         const [showAll] = await conn.query(wishListQueries.showAll);
         res.status(201).json({message:sucMessage.delete,data:showAll})
     } catch (error) {
@@ -137,7 +159,7 @@ const checkoutCtrl = async (req,res)=>{
             //order
             const Shipment_ID = shipment.insertId
             const rawUuid = uuidv4()
-             const OID = await 'OID' +rawUuid.replace(/-/g,'').slice(0, 10);
+             const OID = 'OID' +rawUuid.replace(/-/g,'').slice(0, 10);
              const Order_Date = new Date()
              const session_id = uuidv4()
              const orderData = {
@@ -161,7 +183,7 @@ const checkoutCtrl = async (req,res)=>{
              for(const item of items){
                 const {Product_ID,Size,Color,Quantity,Unit_Price,Subtotal} = item
                 const rawUuid = uuidv4()
-                const CID = await 'CID'+ rawUuid.replace(/-/g,'').slice(0,15)
+                const CID = 'CID'+ rawUuid.replace(/-/g,'').slice(0,15)
              const cartData = {
                 CID,
                 Order_ID,
@@ -195,7 +217,7 @@ const checkoutCtrl = async (req,res)=>{
            }
         }
     } catch (error) {
-        console.log(console.error);
+        console.error(error);
     }
 }
 
@@ -368,4 +390,6 @@ module.exports = {
     addOrUpdateReview,
     getUserReview,
     deleteUserReview
+    ,getPopularProducts
+    ,getLatestProducts
 };
