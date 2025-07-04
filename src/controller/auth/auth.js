@@ -180,4 +180,57 @@ const deleteUserProfile = async (req, res) => {
   }
 };
 
-module.exports = {loginCtrl,regitserCtrl,getUserProfile,updateUserProfile,deleteUserProfile}
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId; // From token verification
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    // Get current user data
+    const [userResults] = await conn.query('SELECT Password FROM users WHERE User_ID = ?', [userId]);
+    if (userResults.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = userResults[0];
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.Password);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    const [updateResults] = await conn.query(
+      'UPDATE users SET Password = ?, updated_at = NOW() WHERE User_ID = ?',
+      [hashedNewPassword, userId]
+    );
+
+    if (updateResults.affectedRows === 0) {
+      return res.status(404).json({ message: "Failed to update password" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully"
+    });
+
+  } catch (error) {
+    console.error("Change password error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {loginCtrl,regitserCtrl,getUserProfile,updateUserProfile,deleteUserProfile,changePassword}

@@ -14,4 +14,7 @@ router.get('/profile', verifyToken, auth.getUserProfile)
 router.put('/profile', verifyToken, auth.updateUserProfile)
 router.delete('/profile', verifyToken, auth.deleteUserProfile)
 
+// Change password route
+router.put('/change-password', verifyToken, auth.changePassword)
+
 module.exports = router
