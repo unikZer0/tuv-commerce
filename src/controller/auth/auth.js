@@ -81,4 +81,103 @@ const rawUuid = uuidv4();
         return res.status(500).json({ message: errMessage.server });
     } 
 }
-module.exports = {loginCtrl,regitserCtrl}
+const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId; // From token verification
+    
+    const [results] = await conn.query(
+      'SELECT User_ID, UID, FirstName, LastName, Email, Phone, DATE_FORMAT(Datebirth, "%Y-%m-%d") as Datebirth, Sex, Images, DATE_FORMAT(Registration_Date, "%Y-%m-%d") as Registration_Date FROM users WHERE User_ID = ?',
+      [userId]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: results[0]
+    });
+
+  } catch (error) {
+    console.error("Get user profile error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId; // From token verification
+    const { FirstName, LastName, Email, Phone, Datebirth, Sex } = req.body;
+
+    // Check if user exists
+    const [userCheck] = await conn.query('SELECT User_ID FROM users WHERE User_ID = ?', [userId]);
+    if (userCheck.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if email is already taken by another user
+    const [emailCheck] = await conn.query(
+      'SELECT User_ID FROM users WHERE Email = ? AND User_ID != ?',
+      [Email, userId]
+    );
+    if (emailCheck.length > 0) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const [results] = await conn.query(
+      'UPDATE users SET FirstName = ?, LastName = ?, Email = ?, Phone = ?, Datebirth = ?, Sex = ?, updated_at = NOW() WHERE User_ID = ?',
+      [FirstName, LastName, Email, Phone, Datebirth, Sex, userId]
+    );
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get updated user data with formatted dates
+    const [updatedUser] = await conn.query(
+      'SELECT User_ID, UID, FirstName, LastName, Email, Phone, DATE_FORMAT(Datebirth, "%Y-%m-%d") as Datebirth, Sex, Images, DATE_FORMAT(Registration_Date, "%Y-%m-%d") as Registration_Date FROM users WHERE User_ID = ?',
+      [userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedUser[0]
+    });
+
+  } catch (error) {
+    console.error("Update user profile error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId; // From token verification
+
+    // Check if user exists
+    const [userCheck] = await conn.query('SELECT User_ID FROM users WHERE User_ID = ?', [userId]);
+    if (userCheck.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Delete user (this will cascade delete related records due to foreign key constraints)
+    const [results] = await conn.query('DELETE FROM users WHERE User_ID = ?', [userId]);
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete user profile error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {loginCtrl,regitserCtrl,getUserProfile,updateUserProfile,deleteUserProfile}
