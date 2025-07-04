@@ -649,8 +649,8 @@ const getShippingTimeline = async (req, res) => {
     // สถานะการสั่งซื้อ
     timeline.push({
       status: "ordered",
-      title: "คำสั่งซื้อถูกสร้าง",
-      description: `รหัสคำสั่งซื้อ: ${order.OID}`,
+      title: "ການສັ່ງຊື້ຖືກສ້າງ",
+      description: `ລະຫັດການສັ່ງຊື້: ${order.OID}`,
       timestamp: order.Order_Date,
       completed: true,
       icon: "shopping_cart"
@@ -660,8 +660,8 @@ const getShippingTimeline = async (req, res) => {
     if (order.Order_Status === "completed") {
       timeline.push({
         status: "paid",
-        title: "ชำระเงินเรียบร้อย",
-        description: "ได้รับการชำระเงินแล้ว",
+        title: "ຈ່າຍເງິນແລ້ວ",
+        description: "ໄດ້ຮັບການຈ່າຍເງິນແລ້ວ",
         timestamp: order.Order_Date,
         completed: true,
         icon: "payment"
@@ -669,8 +669,8 @@ const getShippingTimeline = async (req, res) => {
     } else if (order.Order_Status === "pending") {
       timeline.push({
         status: "pending_payment",
-        title: "รอการชำระเงิน",
-        description: "กรุณาชำระเงินเพื่อดำเนินการต่อ",
+        title: "ລໍຖ້າການຈ່າຍເງິນ",
+        description: "ກະລຸນາຈ່າຍເງິນເພື່ອດໍາເນີນການຕໍ່",
         timestamp: null,
         completed: false,
         icon: "schedule"
@@ -678,8 +678,8 @@ const getShippingTimeline = async (req, res) => {
     } else if (order.Order_Status === "cancelled") {
       timeline.push({
         status: "cancelled",
-        title: "คำสั่งซื้อถูกยกเลิก",
-        description: "คำสั่งซื้อนี้ถูกยกเลิกแล้ว",
+        title: "ການສັ່ງຊື້ຖືກຍົກເລີກ",
+        description: "ການສັ່ງຊື້ນີ້ຖືກຍົກເລີກແລ້ວ",
         timestamp: order.updated_at || order.Order_Date,
         completed: true,
         icon: "cancel",
@@ -698,16 +698,16 @@ const getShippingTimeline = async (req, res) => {
         case "preparing":
           timeline.push({
             status: "preparing",
-            title: "กำลังเตรียมสินค้า",
-            description: "เรากำลังเตรียมสินค้าของคุณ",
+            title: "ກໍາລັງກະກຽມສິນຄ້າ",
+            description: "ພວກເຮົາກໍາລັງກະກຽມສິນຄ້າຂອງທ່ານ",
             timestamp: order.Ship_Date,
             completed: true,
             icon: "inventory"
           });
           timeline.push({
             status: "shipping",
-            title: "กำลังจัดส่ง",
-            description: `หมายเลขติดตาม: ${order.Tracking_Number || 'กำลังออกหมายเลข'}`,
+            title: "ກໍາລັງຈັດສົ່ງ",
+            description: `ຫມາຍເລກຕິດຕາມ: ${order.Tracking_Number || 'ກໍາລັງອອກຫມາຍເລກ'}`,
             timestamp: null,
             completed: false,
             icon: "local_shipping"
@@ -717,24 +717,24 @@ const getShippingTimeline = async (req, res) => {
         case "shipped":
           timeline.push({
             status: "preparing",
-            title: "กำลังเตรียมสินค้า",
-            description: "เตรียมสินค้าเรียบร้อย",
+            title: "ກໍາລັງກະກຽມສິນຄ້າ",
+            description: "ກະກຽມສິນຄ້າເຮັດແລ້ວ",
             timestamp: order.Ship_Date,
             completed: true,
             icon: "inventory"
           });
           timeline.push({
             status: "shipping",
-            title: "กำลังจัดส่ง",
-            description: `หมายเลขติดตาม: ${order.Tracking_Number}`,
+            title: "ກໍາລັງຈັດສົ່ງ",
+            description: `ຫມາຍເລກຕິດຕາມ: ${order.Tracking_Number}`,
             timestamp: order.Ship_Date,
             completed: true,
             icon: "local_shipping"
           });
           timeline.push({
             status: "delivered",
-            title: "จัดส่งเรียบร้อย",
-            description: "สินค้าถึงที่หมายแล้ว",
+            title: "ຈັດສົ່ງແລ້ວ",
+            description: "ສິນຄ້າຮອດທີ່ໝາຍແລ້ວ",
             timestamp: null,
             completed: false,
             icon: "check_circle"
@@ -744,24 +744,24 @@ const getShippingTimeline = async (req, res) => {
         case "delivered":
           timeline.push({
             status: "preparing",
-            title: "เตรียมสินค้า",
-            description: "เตรียมสินค้าเรียบร้อย",
+            title: "ກະກຽມສິນຄ້າ",
+            description: "ກະກຽມສິນຄ້າເຮັດແລ້ວ",
             timestamp: order.Ship_Date,
             completed: true,
             icon: "inventory"
           });
           timeline.push({
             status: "shipping",
-            title: "จัดส่งแล้ว",
-            description: `หมายเลขติดตาม: ${order.Tracking_Number}`,
+            title: "ຈັດສົ່ງແລ້ວ",
+            description: `ຫມາຍເລກຕິດຕາມ: ${order.Tracking_Number}`,
             timestamp: order.Ship_Date,
             completed: true,
             icon: "local_shipping"
           });
                      timeline.push({
              status: "delivered",
-             title: "จัดส่งเรียบร้อย",
-             description: "สินค้าถึงที่หมายแล้ว",
+             title: "ຈັດສົ່ງແລ້ວ",
+             description: "ສິນຄ້າຮອດທີ່ໝາຍແລ້ວ",
              timestamp: new Date().toISOString(), // ใช้เวลาปัจจุบันหากไม่มีข้อมูล
              completed: true,
              icon: "check_circle"
@@ -771,8 +771,8 @@ const getShippingTimeline = async (req, res) => {
         case "cancelled":
           timeline.push({
             status: "cancelled",
-            title: "การจัดส่งถูกยกเลิก",
-            description: "การจัดส่งถูกยกเลิก",
+            title: "ການຈັດສົ່ງຖືກຍົກເລີກ",
+            description: "ການຈັດສົ່ງຖືກຍົກເລີກ",
             timestamp: order.Ship_Date,
             completed: true,
             icon: "cancel",
