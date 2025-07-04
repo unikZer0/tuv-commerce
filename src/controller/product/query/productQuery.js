@@ -27,5 +27,63 @@ const searchQueries = {
   searchBrandSortAsc: `SELECT * FROM products WHERE Brand = ? ORDER BY Price ASC`,
   searchBrandSortDesc: `SELECT * FROM products WHERE Brand = ? ORDER BY Price DESC`,
 };
-module.exports = {productQueries,wishListQueries,searchQueries};
+
+const reviewQueries = {
+  // Get all reviews for a product with user information
+  getProductReviews: `
+    SELECT r.Review_ID, r.User_ID, r.Product_ID, r.Rating, r.Comment, r.Review_Date,
+           u.FirstName, u.LastName, u.Images as UserImage
+    FROM reviews r
+    JOIN users u ON r.User_ID = u.User_ID
+    WHERE r.Product_ID = ?
+    ORDER BY r.Review_Date DESC
+  `,
+  
+  // Get review summary for a product (average rating and total count)
+  getReviewSummary: `
+    SELECT 
+      COUNT(*) as totalReviews,
+      AVG(Rating) as averageRating,
+      SUM(CASE WHEN Rating = 5 THEN 1 ELSE 0 END) as rating5,
+      SUM(CASE WHEN Rating = 4 THEN 1 ELSE 0 END) as rating4,
+      SUM(CASE WHEN Rating = 3 THEN 1 ELSE 0 END) as rating3,
+      SUM(CASE WHEN Rating = 2 THEN 1 ELSE 0 END) as rating2,
+      SUM(CASE WHEN Rating = 1 THEN 1 ELSE 0 END) as rating1
+    FROM reviews 
+    WHERE Product_ID = ?
+  `,
+  
+  // Check if user already reviewed this product
+  checkUserReview: `
+    SELECT Review_ID FROM reviews 
+    WHERE User_ID = ? AND Product_ID = ?
+  `,
+  
+  // Insert new review
+  insertReview: `
+    INSERT INTO reviews (User_ID, Product_ID, Rating, Comment, Review_Date) 
+    VALUES (?, ?, ?, ?, NOW())
+  `,
+  
+  // Update existing review
+  updateReview: `
+    UPDATE reviews 
+    SET Rating = ?, Comment = ?, Review_Date = NOW() 
+    WHERE User_ID = ? AND Product_ID = ?
+  `,
+  
+  // Delete review
+  deleteReview: `
+    DELETE FROM reviews 
+    WHERE User_ID = ? AND Product_ID = ?
+  `,
+  
+  // Get user's review for a specific product
+  getUserReview: `
+    SELECT * FROM reviews 
+    WHERE User_ID = ? AND Product_ID = ?
+  `
+};
+
+module.exports = {productQueries,wishListQueries,searchQueries,reviewQueries};
   

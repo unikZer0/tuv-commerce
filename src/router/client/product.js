@@ -42,5 +42,20 @@ router.post('/order/:orderId/repay',verifyToken,checkouts.repayOrder)
 router.post('/order/:orderId/cancel',verifyToken,checkouts.cancelOrder)
 router.get('/order/:orderId/timeline',verifyToken,checkouts.getShippingTimeline)
 
+//======================= REVIEWS =======================
+// Get all reviews for a product
+router.get('/reviews/:productId', verifyToken, Products.getProductReviews);
+
+// Get review summary for a product (average rating, total count, rating breakdown)
+router.get('/reviews/:productId/summary', verifyToken, Products.getReviewSummary);
+
+// Get user's review for a specific product
+router.get('/reviews/:productId/user', verifyToken, Products.getUserReview);
+
+// Add or update a review
+router.post('/reviews', verifyToken, Products.addOrUpdateReview);
+
+// Delete user's review
+router.delete('/reviews/:productId', verifyToken, Products.deleteUserReview);
 
 module.exports = router
