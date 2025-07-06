@@ -7,6 +7,7 @@ const authorizeRole = require('../../middleware/authorizeRole');
 
 router.post('/products', verifyToken, authorizeRole(1,2,4), adminProduct.getAllProductsCtrl);
 router.post('/products/create', verifyToken, authorizeRole(1,2,4), adminProduct.createProductCtrl);
+router.get('/products/:id', verifyToken, authorizeRole(1,2,4), adminProduct.getProductByIdCtrl);
 router.put('/products/:id', verifyToken, authorizeRole(1,2,4), adminProduct.updateProductCtrl);
 router.delete('/products/:id', verifyToken, authorizeRole(1,2,4), adminProduct.deleteProductCtrl);
 router.get('/products/search', verifyToken, authorizeRole(1,2,4), adminProduct.searchProductsByNameCtrl);
