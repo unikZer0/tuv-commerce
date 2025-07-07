@@ -162,21 +162,67 @@ const deleteUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Delete user (this will cascade delete related records due to foreign key constraints)
-    const [results] = await conn.query('DELETE FROM users WHERE User_ID = ?', [userId]);
+    // Get a connection from the pool for transaction
+    const connection = await conn.getConnection();
+    
+    try {
+      // Start transaction
+      await connection.beginTransaction();
 
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ message: "User not found" });
+      // Delete related data in order (child tables first)
+      
+      // 1. Delete wishlist items
+      await connection.query('DELETE FROM wishlist WHERE User_ID = ?', [userId]);
+      
+      // 2. Delete reviews
+      await connection.query('DELETE FROM reviews WHERE User_ID = ?', [userId]);
+      
+      // 3. Get all orders for this user
+      const [orders] = await connection.query('SELECT Order_ID FROM orders WHERE User_ID = ?', [userId]);
+      
+      // 4. Delete payments first (because payments references orders)
+      for (const order of orders) {
+        await connection.query('DELETE FROM payments WHERE Order_ID = ?', [order.Order_ID]);
+      }
+      
+      // 5. Delete cart items (because cart references orders)
+      await connection.query('DELETE FROM cart WHERE User_ID = ?', [userId]);
+      
+      // 6. Delete orders (because orders references address)
+      await connection.query('DELETE FROM orders WHERE User_ID = ?', [userId]);
+      
+      // 7. Delete addresses (after orders are deleted)
+      await connection.query('DELETE FROM address WHERE User_ID = ?', [userId]);
+      
+      // 8. Finally delete the user
+      const [results] = await connection.query('DELETE FROM users WHERE User_ID = ?', [userId]);
+
+      if (results.affectedRows === 0) {
+        throw new Error("Failed to delete user");
+      }
+
+      // Commit transaction
+      await connection.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: sucMessage.accountDeleted
+      });
+
+    } catch (error) {
+      // Rollback transaction on error
+      await connection.rollback();
+      throw error;
+    } finally {
+      // Release the connection back to the pool
+      connection.release();
     }
-
-    return res.status(200).json({
-      success: true,
-      message: "Account deleted successfully"
-    });
 
   } catch (error) {
     console.error("Delete user profile error:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ 
+      message: errMessage.deleteAccountFailed
+    });
   }
 };
 
