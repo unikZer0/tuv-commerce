@@ -24,11 +24,23 @@ const getProducts = async (req, res) => {
       
     const [results] = await conn.query(query, [limit, offset]);
     
-    // Parse the Stock JSON string for each product
-    const productsWithParsedStock = results.map(product => ({
-      ...product,
-      Stock: JSON.parse(product.Stock)
-    }));
+    // Parse the Stock JSON string for each product with error handling
+    const productsWithParsedStock = results.map(product => {
+      let parsedStock = [];
+      try {
+        if (product.Stock && product.Stock !== '[]' && product.Stock !== 'null') {
+          parsedStock = JSON.parse(product.Stock);
+        }
+      } catch (parseError) {
+        console.error('Error parsing Stock JSON for product', product.Product_ID, ':', parseError);
+        parsedStock = [];
+      }
+      
+      return {
+        ...product,
+        Stock: parsedStock
+      };
+    });
 
     res.json({ message: sucMessage.seeAll, page, limit, products: productsWithParsedStock });
   } catch (error) {
@@ -63,11 +75,23 @@ const getCategories = async (req, res) => {
     
     const [results] = await conn.query(query, [ productType_ID,limit, offset]);
 
-    // Parse the Stock JSON string for each product
-    const productsWithParsedStock = results.map(product => ({
-      ...product,
-      Stock: JSON.parse(product.Stock)
-    }));
+    // Parse the Stock JSON string for each product with error handling
+    const productsWithParsedStock = results.map(product => {
+      let parsedStock = [];
+      try {
+        if (product.Stock && product.Stock !== '[]' && product.Stock !== 'null') {
+          parsedStock = JSON.parse(product.Stock);
+        }
+      } catch (parseError) {
+        console.error('Error parsing Stock JSON for product', product.Product_ID, ':', parseError);
+        parsedStock = [];
+      }
+      
+      return {
+        ...product,
+        Stock: parsedStock
+      };
+    });
 
     res.json({ message: sucMessage.seeAll, page, limit, products: productsWithParsedStock });
   } catch (error) {

@@ -1,18 +1,50 @@
 const productQueries ={
   showProduct:`SELECT * FROM products WHERE Product_ID = ?`,
-  // Popular products: by most reviews (top 8)
+  // Popular products: by most reviews (top 8) with Stock data
   getPopularProducts: `
-    SELECT p.*, COUNT(r.Review_ID) as reviewCount
+    SELECT 
+      p.*,
+      CASE 
+        WHEN COUNT(i.Inventory_ID) > 0 THEN
+          CONCAT('[', GROUP_CONCAT(
+            CONCAT(
+              '{"Size":"', IFNULL(i.Size, ''), '",',
+              '"Color":"', IFNULL(i.Color, ''), '",',
+              '"Quantity":', IFNULL(i.Quantity, 0), '}'
+            )
+          ), ']')
+        ELSE '[]'
+      END AS Stock
     FROM products p
-    LEFT JOIN reviews r ON p.Product_ID = r.Product_ID
-    GROUP BY p.Product_ID
-    ORDER BY reviewCount DESC, p.Product_ID DESC
+    LEFT JOIN (
+      SELECT Product_ID, COUNT(*) as review_count 
+      FROM reviews 
+      GROUP BY Product_ID
+    ) r ON p.Product_ID = r.Product_ID
+    LEFT JOIN inventory i ON p.Product_ID = i.Product_ID
+    GROUP BY p.Product_ID, p.Name, p.Price, p.Image, p.Description, p.Brand, p.productType_ID, r.review_count
+    ORDER BY IFNULL(r.review_count, 0) DESC, p.Product_ID DESC
     LIMIT 8
   `,
-  // Latest products: by Product_ID (top 8 newest)
+  // Latest products: by Product_ID (top 8 newest) with Stock data
   getLatestProducts: `
-    SELECT * FROM products
-    ORDER BY Product_ID DESC
+    SELECT 
+      p.*,
+      CASE 
+        WHEN COUNT(i.Inventory_ID) > 0 THEN
+          CONCAT('[', GROUP_CONCAT(
+            CONCAT(
+              '{"Size":"', IFNULL(i.Size, ''), '",',
+              '"Color":"', IFNULL(i.Color, ''), '",',
+              '"Quantity":', IFNULL(i.Quantity, 0), '}'
+            )
+          ), ']')
+        ELSE '[]'
+      END AS Stock
+    FROM products p
+    LEFT JOIN inventory i ON p.Product_ID = i.Product_ID
+    GROUP BY p.Product_ID, p.Name, p.Price, p.Image, p.Description, p.Brand, p.productType_ID
+    ORDER BY p.Product_ID DESC
     LIMIT 8
   `
 }

@@ -26,19 +26,23 @@ getProductsQuery :`SELECT
     p.Brand,
     p.Image,
     p.Price,
-    CONCAT('[', GROUP_CONCAT(
-        CONCAT(
-            '{"Size":"', i.Size, '",',
-            '"Color":"', i.Color, '",',
-            '"Quantity":', i.Quantity, '}'
-        )
-    ), ']') AS Stock
+    CASE 
+        WHEN COUNT(i.Inventory_ID) > 0 THEN
+            CONCAT('[', GROUP_CONCAT(
+                CONCAT(
+                    '{"Size":"', IFNULL(i.Size, ''), '",',
+                    '"Color":"', IFNULL(i.Color, ''), '",',
+                    '"Quantity":', IFNULL(i.Quantity, 0), '}'
+                )
+            ), ']')
+        ELSE '[]'
+    END AS Stock
 FROM 
     products p
-JOIN 
+LEFT JOIN 
     inventory i ON p.Product_ID = i.Product_ID
 GROUP BY 
-    p.Product_ID
+    p.Product_ID, p.Name, p.Description, p.Brand, p.Image, p.Price
 LIMIT ? OFFSET ?
 `,
  getCateQuery :`
@@ -49,21 +53,25 @@ SELECT
         p.Brand,
         p.Image,
         p.Price,
-        CONCAT('[', GROUP_CONCAT(
-            CONCAT(
-                '{"Size":"', i.Size, '",',
-                '"Color":"', i.Color, '",',
-                '"Quantity":', i.Quantity, '}'
-            )
-        ), ']') AS Stock
+        CASE 
+            WHEN COUNT(i.Inventory_ID) > 0 THEN
+                CONCAT('[', GROUP_CONCAT(
+                    CONCAT(
+                        '{"Size":"', IFNULL(i.Size, ''), '",',
+                        '"Color":"', IFNULL(i.Color, ''), '",',
+                        '"Quantity":', IFNULL(i.Quantity, 0), '}'
+                    )
+                ), ']')
+            ELSE '[]'
+        END AS Stock
       FROM 
         products p
-      JOIN 
+      LEFT JOIN 
         inventory i ON p.Product_ID = i.Product_ID
       WHERE 
         p.productType_ID = ?
       GROUP BY 
-        p.Product_ID
+        p.Product_ID, p.Name, p.Description, p.Brand, p.Image, p.Price
       LIMIT ? OFFSET ?
     
 `

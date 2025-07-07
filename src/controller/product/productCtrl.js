@@ -2,8 +2,34 @@
 // Get popular products (by most reviews)
 const getPopularProducts = async (req, res) => {
     try {
+        console.log('Fetching popular products...');
         const [results] = await conn.query(productQueries.getPopularProducts);
-        res.status(200).json({ message: 'Popular products retrieved successfully', data: results });
+        console.log('Raw results count:', results.length);
+        
+        // Parse the Stock JSON string for each product with error handling
+        const productsWithParsedStock = results.map(product => {
+            let parsedStock = [];
+            try {
+                if (product.Stock && product.Stock !== '[]' && product.Stock !== 'null') {
+                    parsedStock = JSON.parse(product.Stock);
+                }
+            } catch (parseError) {
+                console.error('Error parsing Stock JSON for product', product.Product_ID, ':', parseError);
+                parsedStock = [];
+            }
+            
+            return {
+                ...product,
+                Stock: parsedStock
+            };
+        });
+        
+        console.log('Processed products count:', productsWithParsedStock.length);
+        
+        res.status(200).json({ 
+            message: 'Popular products retrieved successfully', 
+            data: productsWithParsedStock 
+        });
     } catch (error) {
         console.error('Error getting popular products:', error);
         res.status(500).json({ error: 'Failed to get popular products' });
@@ -13,8 +39,34 @@ const getPopularProducts = async (req, res) => {
 // Get latest products (by newest)
 const getLatestProducts = async (req, res) => {
     try {
+        console.log('Fetching latest products...');
         const [results] = await conn.query(productQueries.getLatestProducts);
-        res.status(200).json({ message: 'Latest products retrieved successfully', data: results });
+        console.log('Raw results count:', results.length);
+        
+        // Parse the Stock JSON string for each product with error handling
+        const productsWithParsedStock = results.map(product => {
+            let parsedStock = [];
+            try {
+                if (product.Stock && product.Stock !== '[]' && product.Stock !== 'null') {
+                    parsedStock = JSON.parse(product.Stock);
+                }
+            } catch (parseError) {
+                console.error('Error parsing Stock JSON for product', product.Product_ID, ':', parseError);
+                parsedStock = [];
+            }
+            
+            return {
+                ...product,
+                Stock: parsedStock
+            };
+        });
+        
+        console.log('Processed products count:', productsWithParsedStock.length);
+        
+        res.status(200).json({ 
+            message: 'Latest products retrieved successfully', 
+            data: productsWithParsedStock 
+        });
     } catch (error) {
         console.error('Error getting latest products:', error);
         res.status(500).json({ error: 'Failed to get latest products' });
