@@ -1,12 +1,29 @@
 const conn = require("../../setting/connection")
 const {chartQueries} = require("./query/chartQueries")
 
-const chartCtrl = async (req,res) => {
-      const[result] = await conn.query(`select count(Order_Id) as allorder from orders WHERE MONTH(Created_At) = MONTH(NOW()) `)
-      const six = result[0]
-  const monthlySales = [1, 0, 0, 0, 0, six, 0, 0, 0, 0, 0, 0];
-  res.json({ sales: monthlySales });
-}
+const chartCtrl = async (req, res) => {
+  try {
+    const [results] = await conn.query(`
+      SELECT MONTH(Created_At) AS month, COUNT(Order_Id) AS count
+      FROM orders
+      WHERE YEAR(Created_At) = YEAR(NOW())
+      GROUP BY MONTH(Created_At)
+    `);
+
+    const monthlySales = new Array(12).fill(0);
+    results.forEach(row => {
+      const monthIndex = row.month - 1;
+      monthlySales[monthIndex] = row.count;
+    });
+
+    res.json({ sales: monthlySales });
+  } catch (err) {
+    console.error('Error fetching monthly sales:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
-    chartCtrl,
-}
+  chartCtrl,
+};
+

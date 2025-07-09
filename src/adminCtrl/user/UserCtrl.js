@@ -1,6 +1,7 @@
 const conn = require('../../setting/connection');
 const { userQueries } = require('./UserQueries');
 const { sucMessage, errMessage } = require('../../service/messages');
+const { logActivity, ACTIVITY_TYPES } = require('../../service/activityLogger');
 
 const getAllUsersCtrl = async (req, res) => {
   try {
@@ -20,6 +21,18 @@ const DeleteUsersCtrl = async (req, res) => {
   try {
     const User_ID = req.params.id
     const [results] = await conn.query(userQueries.deleteUsers,[User_ID]);
+
+    // Log activity
+    if (req.user && req.user.userId) {
+      await logActivity({
+        userId: req.user.userId,
+        activityType: ACTIVITY_TYPES.USER_DELETE,
+        description: `Deleted user with ID ${User_ID}`,
+        relatedId: User_ID,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || null
+      });
+    }
 
     return res.status(200).json({
       message: sucMessage.seeAll,

@@ -3,15 +3,13 @@ const conn = require('../../setting/connection');
 const { productQueries } = require('./ProductQueries');
 const { sucMessage, errMessage } = require('../../service/messages');
 const { v4: uuidv4 } = require("uuid");
+const { logActivity, ACTIVITY_TYPES } = require('../../service/activityLogger');
 const rawUuid = uuidv4();
 const bodyParser = require('body-parser');
 
-// ดึงข้อมูลสินค้าทั้งหมด
 const getAllProductsCtrl = async (req, res) => {
   try {
     const [results] = await conn.query(productQueries.getAllProducts);
-    console.log("All products data:", results); // Debug log
-    console.log("Sample product totalStock:", results[0]?.totalStock); // Debug log
     return res.status(200).json({
       message: sucMessage.seeAll,
       data: results,
@@ -22,7 +20,6 @@ const getAllProductsCtrl = async (req, res) => {
   }
 };
 
-// เพิ่มสินค้าใหม่พร้อม inventory (Transaction)
 const createProductCtrl = async (req, res) => {
   let connection;
   try {
@@ -68,18 +65,13 @@ const createProductCtrl = async (req, res) => {
 
     const productId = productResult.insertId;
 
-    // เพิ่ม inventory items
-    console.log("Received inventory from frontend:", inventory); // Debug log
     if (inventory && inventory.length > 0) {
-      console.log("Processing inventory items..."); // Debug log
       for (const item of inventory) {
         const { Size, Color, Quantity } = item;
-        console.log("Processing item:", { Size, Color, Quantity }); // Debug log
         if (Size && Color && Quantity !== undefined && Quantity >= 0) {
           await connection.query(productQueries.insertInventory, [
             productId, Size, Color, Quantity
           ]);
-          console.log("Inserted inventory item successfully"); // Debug log
         } else {
           console.log("Skipping invalid inventory item:", item); // Debug log
         }
@@ -89,7 +81,17 @@ const createProductCtrl = async (req, res) => {
     }
 
     await connection.commit();
-
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PRODUCT_CREATE,
+              description: `created by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     return res.status(201).json({
       message: sucMessage.created,
       data: { Product_ID: productId }
@@ -133,7 +135,17 @@ const getProductByIdCtrl = async (req, res) => {
 
     console.log("Product data from database:", product); // Debug log
     console.log("ProductType_ID from database:", product.productType_ID); // Debug log
-
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PASSWORD_CHANGE,
+              description: `view by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     return res.status(200).json({
       message: "ດຶງຂໍ້ມູນສິນຄ້າສຳເລັດ",
       data: product
@@ -144,7 +156,6 @@ const getProductByIdCtrl = async (req, res) => {
   }
 };
 
-// อัพเดทข้อมูลสินค้าและ inventory (Transaction)
 const updateProductCtrl = async (req, res) => {
   let connection;
   const id = req.params.id;
@@ -157,7 +168,6 @@ const updateProductCtrl = async (req, res) => {
     connection = await conn.getConnection();
     await connection.beginTransaction();
 
-    // ตรวจสอบว่าสินค้ามีอยู่จริงหรือไม่
     const [checkResult] = await connection.query(
       "SELECT COUNT(*) AS count FROM products WHERE Product_ID = ?",
       [id]
@@ -179,16 +189,13 @@ const updateProductCtrl = async (req, res) => {
       inventory = []
     } = req.body;
 
-    console.log("Update Product - Received inventory:", inventory); // Debug log
-    console.log("Update Product - Inventory length:", inventory.length); // Debug log
 
-    // ตรวจสอบข้อมูลที่จำเป็น
+  
     if (!Name || !Price || !productType_ID) {
       await connection.rollback();
       return res.status(400).json({ message: "ກະລຸນາກອກຂໍ້ມູນທີ່ຈຳເປັນໃຫ້ຄົບຖ້ວນ" });
     }
 
-    // ตรวจสอบ Price range (decimal(10,2) = max 99,999,999.99)
     const price = parseFloat(Price);
     if (isNaN(price) || price < 10000) {
       await connection.rollback();
@@ -199,7 +206,6 @@ const updateProductCtrl = async (req, res) => {
       return res.status(400).json({ message: "ລາຄາສູງສຸດທີ່ອະນຸຍາດ: 99,999,999.99 ກີບ" });
     }
 
-    // อัปเดตข้อมูลสินค้า
     await connection.query(
       `UPDATE products 
        SET Name = ?, Brand = ?, Price = ?, Description = ?, Status = ?, Image = ?, 
@@ -207,32 +213,38 @@ const updateProductCtrl = async (req, res) => {
        WHERE Product_ID = ?`,
       [Name, Brand, Price, Description, Status, Image, productType_ID, Added_By, id]
     );
-
-    // อัปเดต inventory
     if (inventory && inventory.length > 0) {
-      console.log("Processing inventory items..."); // Debug log
-      // ลบ inventory เดิม
+      console.log("Processing inventory items..."); 
       await connection.query(productQueries.deleteInventoryByProduct, [id]);
-      console.log("Deleted old inventory for product ID:", id); // Debug log
-      
-      // เพิ่ม inventory ใหม่
+      console.log("Deleted old inventory for product ID:", id);
       for (const item of inventory) {
         const { Size, Color, Quantity } = item;
-        console.log("Processing inventory item:", { Size, Color, Quantity }); // Debug log
+        console.log("Processing inventory item:", { Size, Color, Quantity }); 
         if (Size && Color && Quantity !== undefined && Quantity >= 0) {
           await connection.query(productQueries.insertInventory, [
             id, Size, Color, Quantity
           ]);
-          console.log("Inserted inventory item for product ID:", id); // Debug log
+          console.log("Inserted inventory item for product ID:", id); 
         } else {
-          console.log("Skipping invalid inventory item:", item); // Debug log
+          console.log("Skipping invalid inventory item:", item); 
         }
       }
     } else {
-      console.log("No inventory items to process or empty inventory array"); // Debug log
+      console.log("No inventory items to process or empty inventory array"); 
     }
 
     await connection.commit();
+    const User_ID = req.user.userId
+        if (req.user && req.user.userId) {
+            await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PRODUCT_UPDATE,
+              description: `Updated user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     return res.status(200).json({ message: "ແກ້ຂສຳເລັດແລ້ວ" });
 
   } catch (error) {
@@ -253,7 +265,6 @@ const updateProductCtrl = async (req, res) => {
   }
 };
 
-// ลบสินค้าและ inventory (Transaction)
 const deleteProductCtrl = async (req, res) => {
   let connection;
   const id = req.params.id;
@@ -266,7 +277,6 @@ const deleteProductCtrl = async (req, res) => {
     connection = await conn.getConnection();
     await connection.beginTransaction();
 
-    // ตรวจสอบว่าสินค้านั้นมีอยู่หรือไม่
     const [checkResult] = await connection.query(
       "SELECT COUNT(*) AS count FROM products WHERE Product_ID = ?",
       [id]
@@ -276,14 +286,22 @@ const deleteProductCtrl = async (req, res) => {
       await connection.rollback();
       return res.status(404).json({ message: "ບໍ່ພົບສິນຄ້າທີ່ຕ້ອງການລົບ" });
     }
-
-    // ลบ inventory ก่อน
     await connection.query(productQueries.deleteInventoryByProduct, [id]);
     
-    // ลบสินค้า
     await connection.query(productQueries.deleteProduct, [id]);
 
     await connection.commit();
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PRODUCT_DELETE,
+              description: `deleted by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     return res.status(200).json({ message: "ລົບສິນຄ້າສຳເລັດ" });
 
   } catch (error) {
@@ -298,8 +316,6 @@ const deleteProductCtrl = async (req, res) => {
     }
   }
 };
-
-// ค้นหาสินค้าตามชื่อ
 const searchProductsByNameCtrl = async (req, res) => {
   try {
     const { name } = req.query;
@@ -320,7 +336,6 @@ const searchProductsByNameCtrl = async (req, res) => {
   }
 };
 
-// ค้นหาสินค้าตามราคา
 const searchProductsByPriceRangeCtrl = async (req, res) => {
   try {
     const { minPrice, maxPrice } = req.query;
@@ -352,7 +367,6 @@ const searchProductsByPriceRangeCtrl = async (req, res) => {
   }
 };
 
-// ดึงข้อมูลประเภทสินค้าทั้งหมด
 const getAllProductTypesCtrl = async (req, res) => {
   try {
     const [results] = await conn.query("SELECT * FROM product_types");
