@@ -1,0 +1,57 @@
+services:
+  app:
+    build: .
+    container_name: my_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=secret
+      - DB_NAME=f1auth
+    depends_on:
+      - db
+    networks:
+      - mysql_data_network  # Updated network name
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  db:
+    image: mysql:8.0
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: mysql_network
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mysql_data_network  # Updated network name
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mysql_data_phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=db
+      - MYSQL_ROOT_PASSWORD=secret
+    depends_on:
+      - db
+    networks:
+      - mysql_data_network  # Updated network name
+
+volumes:
+  mysql_data:
+    name: mysql_data
+
+networks:
+  mysql_data_network:  # Defined network here
+    driver: bridge

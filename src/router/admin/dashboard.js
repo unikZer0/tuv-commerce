@@ -13,5 +13,6 @@ router.post('/monthlytarget', verifyToken, authorizeRole(1,2), monthlyTarget.mon
 router.post('/monthlysales', verifyToken, authorizeRole(1,2), monthlysales.chartCtrl);
 router.post('/monthlystats', verifyToken, authorizeRole(1,2), monthlystats.statisticCtrl);
 router.post('/activities', verifyToken, authorizeRole(1,2), activities.activitiesCtrl);
+router.post('/allactivities', verifyToken, authorizeRole(1,2), activities.allActivitiesCtrl);
 
 module.exports = router

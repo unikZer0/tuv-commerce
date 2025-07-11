@@ -80,6 +80,7 @@ const { sucMessage, errMessage } = require('../../service/messages');
 const {addressQueries} = require('./query/orderPageQuery')
 const { v4: uuidv4 } = require("uuid");
 let rawUuid = uuidv4();
+const { logActivity, ACTIVITY_TYPES } = require('../../service/activityLogger');
 // ================category
 
 const getProducts = async (req,res)=>{
@@ -129,6 +130,17 @@ const insertWishlistCtrl = async (req,res) =>{
         if (!User_ID || !Product_ID) {
             return res.status(400).json({ error: 'User_ID and Product_ID are required' });
           }
+          if (req.user && req.user.userId) {
+                const User_ID = req.user.userId
+                await logActivity({
+                        userId: req.user.userId,
+                        activityType: "WISH LIST",
+                        description: `wish list by user with ID ${User_ID}`,
+                        relatedId: User_ID,
+                        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                        userAgent: req.headers['user-agent'] || null
+                        });
+                }
         res.status(201).json({message:"show product",data:results})
     } catch (error) {
         console.log(error);

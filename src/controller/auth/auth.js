@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const {loginQuery,registerQuery,checkExist} = require('./query')
 const {sucMessage,errMessage} = require('../../service/messages')
 const bcrypt = require('bcrypt')
+const { logActivity, ACTIVITY_TYPES } = require('../../service/activityLogger');
 const { v4: uuidv4 } = require("uuid");
 const secret = 'mysecret'
 const validator = require('validator')
@@ -26,6 +27,16 @@ const loginCtrl = async (req,res)=>{
             expiresIn:'20h'
         })
         console.log('token :' ,token);
+        if (!req.user) {
+            await logActivity({
+              userId: user.User_ID,
+              activityType: ACTIVITY_TYPES.LOGIN,
+              description: `login with ID ${user.User_ID}`,
+              relatedId: user.User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+          }
       
         return res.status(200).json({
             message: sucMessage.login || "Login successful",
@@ -74,8 +85,19 @@ const rawUuid = uuidv4();
           const Role_id = 3
 //insert
           const userData = await conn.query(registerQuery,[UID,FirstName,LastName,Email,Phone,Datebirth,Sex,hashPwd,Images || null ,RegistrationDate,Role_id])
+          const results = userData[0]
+          console.log(results);
           
-          return res.status(201).json({message:sucMessage.insert , users:userData})
+            await logActivity({
+              userId: user.User_ID,
+              activityType: ACTIVITY_TYPES.REGISTER,
+              description: `login with ID ${user.User_ID}`,
+              relatedId: user.User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+          
+          return res.status(201).json({message:sucMessage.insert , users:results})
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: errMessage.server });
@@ -203,6 +225,17 @@ const deleteUserProfile = async (req, res) => {
 
       // Commit transaction
       await connection.commit();
+      if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PRODUCT_CREATE,
+              description: `created by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
 
       return res.status(200).json({
         success: true,
@@ -266,6 +299,17 @@ const changePassword = async (req, res) => {
 
     if (updateResults.affectedRows === 0) {
       return res.status(404).json({ message: "Failed to update password" });
+    }
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: ACTIVITY_TYPES.PRODUCT_CREATE,
+              description: `created by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
     }
 
     return res.status(200).json({

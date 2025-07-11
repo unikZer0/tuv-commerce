@@ -4,8 +4,6 @@ const { sucMessage, errMessage } = require('../../service/messages');
 const activitiesCtrl = async (req,res) => {
     
     try {
-        // const page = parseInt(req.query.page) || 1
-        // const limit = parseInt(req.query.limit) || 10
         const [activities] = await conn.query(activitiesQueries.showActivities)
         const results = activities
         res.json({message:sucMessage.sucMessage,data:results})
@@ -14,7 +12,24 @@ const activitiesCtrl = async (req,res) => {
         console.log(error);
     }
 }
+const allActivitiesCtrl = async (req,res) => {
+    
+    try {
+        const page = parseInt(req.query.page) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const offset = page - 1
+        const [activities] = await conn.query(activitiesQueries.showAllActivities,[limit,offset])
+        const results = activities
+        console.log(results);
+        
+        res.json({message:sucMessage.sucMessage,data:results})
+    } catch (error) {
+        res.status(400).json({message:errMessage.server})
+        console.log(error);
+    }
+}
 
 module.exports = {
-    activitiesCtrl
+    activitiesCtrl,
+    allActivitiesCtrl
 }

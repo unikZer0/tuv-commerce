@@ -2,6 +2,7 @@ const conn = require("../../setting/connection");
 const { orderQuery } = require("./query/orderPageQuery");
 const { v4: uuidv4 } = require("uuid");
 require('dotenv').config();
+const { logActivity, ACTIVITY_TYPES } = require('../../service/activityLogger');
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 //checkout
@@ -230,11 +231,22 @@ const checkoutCtrl = async (req, res) => {
             item.Size,
             item.Color,
           ]);
-            return res.json({
-          message: "Stripe session created",
-          session_url: session.url,
-          session_id :session.id
-          });
+                if (req.user && req.user.userId) {
+            const User_ID = req.user.userId
+          await logActivity({
+                    userId: req.user.userId,
+                    activityType: "CHECKED OUT",
+                    description: `checked out by user with ID ${User_ID}`,
+                    relatedId: User_ID,
+                    ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    userAgent: req.headers['user-agent'] || null
+                  });
+          }
+                  return res.json({
+                message: "Stripe session created",
+                session_url: session.url,
+                session_id :session.id
+                });
           
           
         }
@@ -333,7 +345,17 @@ const webhookCtrl = async (req,res)=>{
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
-
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: "STRIPE PAYMENT",
+              description: `paid by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     res.json({ received: true });
   } catch (error) {
     console.error(' Error processing webhook:', error);
@@ -600,7 +622,17 @@ const cancelOrder = async (req, res) => {
         [order.Shipment_ID]
       );
     }
-
+    if (req.user && req.user.userId) {
+      const User_ID = req.user.userId
+    await logActivity({
+              userId: req.user.userId,
+              activityType: "CANCEL ORDER ",
+              description: `cancel order by user with ID ${User_ID}`,
+              relatedId: User_ID,
+              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+              userAgent: req.headers['user-agent'] || null
+            });
+    }
     res.json({
       success: true,
       message: "Order cancelled successfully"
@@ -781,7 +813,6 @@ const getShippingTimeline = async (req, res) => {
           break;
       }
     }
-
     res.json({
       success: true,
       data: { 
