@@ -52,11 +52,33 @@ const wishListQueries = {
   showAll : `SELECT * FROM wishlist`,
   insert :`INSERT INTO wishlist (User_ID,Product_ID,Date_Added) VALUES (?,?,?)`,
   delete :`DELETE FROM wishlist WHERE Product_ID	= ?`,
-  showWishlist :`SELECT w.wishlist_id,p.Product_ID, p.Name, p.Price, p.Image, w.Date_Added
-  FROM wishlist w
-  JOIN products p ON w.Product_ID = p.Product_ID
-  WHERE w.User_ID = ?
-`,
+  showWishlist :`
+    SELECT 
+      w.wishlist_id,
+      p.Product_ID, 
+      p.Name, 
+      p.Price, 
+      p.Image, 
+      p.Description,
+      p.Brand,
+      w.Date_Added,
+      CASE 
+        WHEN COUNT(i.Inventory_ID) > 0 THEN
+          CONCAT('[', GROUP_CONCAT(
+            CONCAT(
+              '{"Size":"', IFNULL(i.Size, ''), '",',
+              '"Color":"', IFNULL(i.Color, ''), '",',
+              '"Quantity":', IFNULL(i.Quantity, 0), '}'
+            )
+          ), ']')
+        ELSE '[]'
+      END AS Stock
+    FROM wishlist w
+    JOIN products p ON w.Product_ID = p.Product_ID
+    LEFT JOIN inventory i ON p.Product_ID = i.Product_ID
+    WHERE w.User_ID = ?
+    GROUP BY w.wishlist_id, p.Product_ID, p.Name, p.Price, p.Image, p.Description, p.Brand, w.Date_Added
+  `,
 
 }
 const searchQueries = {
