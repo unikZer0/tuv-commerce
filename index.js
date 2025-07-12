@@ -12,6 +12,7 @@ const products = require('./src/router/client/product');
 const users = require('./src/router/admin/user');
 const product_t = require('./src/router/admin/product');
 const dashboard = require('./src/router/admin/dashboard');
+const shipment = require('./src/router/admin/shipment');
 
 app.use(cors());
 app.use('/', webhook);
@@ -29,6 +30,7 @@ app.use(express.static('public'));
 app.use('/api/admin/', product_t);
 app.use('/api/admin/', users);
 app.use('/api/admin/', dashboard);
+app.use('/api/admin/shipment/', shipment);
 
 //  Client routes
 app.use('/api/auth/', authRoute);

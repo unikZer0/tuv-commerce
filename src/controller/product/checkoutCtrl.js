@@ -18,6 +18,34 @@ const checkoutCtrl = async (req, res) => {
     if (!paymentMethode) {
       return res.json({ message: "please select payment methode" });
     }
+
+    // ตรวจสอบ stock ก่อนสร้าง order ทุกครั้ง
+    for (const item of items) {
+      const { Product_ID, Size, Color, Quantity } = item;
+      
+      // ตรวจสอบว่าสินค้ามีอยู่จริง
+      const [product] = await conn.query(
+        orderQuery.checkProduct,
+        Product_ID
+      );
+      if (!product.length) {
+        return res.status(404).json({ message: `Product not found: ${Product_ID}` });
+      }
+
+      // ตรวจสอบ stock
+      const [[stockRow]] = await conn.query(orderQuery.checkStock, [
+        Product_ID,
+        Size,
+        Color,
+      ]);
+
+      if (!stockRow || stockRow.Quantity < Quantity) {
+        return res.status(400).json({
+          message: `Not enough stock for Product ID ${Product_ID}, Color ${Color}, Size ${Size}. Available: ${stockRow ? stockRow.Quantity : 0}, Requested: ${Quantity}`,
+        });
+      }
+    }
+
     if (paymentMethode === "destination") {
       try {
         //shipment
@@ -86,19 +114,9 @@ const checkoutCtrl = async (req, res) => {
           };
           await conn.query(orderQuery.insertCart, cartData);
         }
-        const [carts] = await conn.query(orderQuery.callToDelete, Order_ID);
-        for (const item of carts) {
-          const [[stockRow]] = await conn.query(orderQuery.checkStock, [
-            item.Product_ID,
-            item.Size,
-            item.Color,
-          ]);
 
-          if (!stockRow || stockRow.Quantity < item.Quantity) {
-            return res.status(400).json({
-              message: `Not enough stock for Product ID ${item.Product_ID}, Color ${item.Color}, Size ${item.Size}`,
-            });
-          }
+        // ลด stock หลังจากสร้าง order สำเร็จแล้ว
+        for (const item of items) {
           await conn.query(orderQuery.deleteStock, [
             item.Quantity,
             item.Product_ID,
@@ -106,6 +124,7 @@ const checkoutCtrl = async (req, res) => {
             item.Color,
           ]);
         }
+
         return res.json({ message: "success data",data:orderData });
       } catch (error) {
         console.log(error);
@@ -211,45 +230,33 @@ const checkoutCtrl = async (req, res) => {
 
           await conn.query(orderQuery.insertCart, cartData);
         }
-        const [carts] = await conn.query(orderQuery.callToDelete, Order_ID);
-        for (const item of carts) {
-          
-          const [[stockRow]] = await conn.query(orderQuery.checkStock, [
-            item.Product_ID,
-            item.Size,
-            item.Color,
-          ]);
 
-          if (!stockRow || stockRow.Quantity < item.Quantity) {
-            return res.status(400).json({
-              message: `Not enough stock for Product ID ${item.Product_ID}, Color ${item.Color}, Size ${item.Size}`,
-            });
-          }
+        // ลด stock หลังจากสร้าง order สำเร็จแล้ว (สำหรับ pending orders จะลดใน webhook เมื่อชำระเงินสำเร็จ)
+        for (const item of items) {
           await conn.query(orderQuery.deleteStock, [
             item.Quantity,
             item.Product_ID,
             item.Size,
             item.Color,
           ]);
-                if (req.user && req.user.userId) {
-            const User_ID = req.user.userId
-          await logActivity({
-                    userId: req.user.userId,
-                    activityType: "CHECKED OUT",
-                    description: `checked out by user with ID ${User_ID}`,
-                    relatedId: User_ID,
-                    ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                    userAgent: req.headers['user-agent'] || null
-                  });
-          }
-                  return res.json({
-                message: "Stripe session created",
-                session_url: session.url,
-                session_id :session.id
-                });
-          
-          
         }
+
+        if (req.user && req.user.userId) {
+          const User_ID = req.user.userId
+          await logActivity({
+            userId: req.user.userId,
+            activityType: "CHECKED OUT",
+            description: `checked out by user with ID ${User_ID}`,
+            relatedId: User_ID,
+            ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            userAgent: req.headers['user-agent'] || null
+          });
+        }
+        return res.json({
+          message: "Stripe session created",
+          session_url: session.url,
+          session_id :session.id
+        });
         
       } catch (error) {
         console.error("Stripe/card checkout error:", error);
