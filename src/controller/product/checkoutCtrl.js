@@ -245,8 +245,8 @@ const checkoutCtrl = async (req, res) => {
           const User_ID = req.user.userId
           await logActivity({
             userId: req.user.userId,
-            activityType: "CHECKED OUT",
-            description: `checked out by user with ID ${User_ID}`,
+            activityType: ACTIVITY_TYPES.ORDER_CREATE,
+            description: `created order by user with ID ${User_ID}`,
             relatedId: User_ID,
             ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
             userAgent: req.headers['user-agent'] || null
@@ -356,8 +356,8 @@ const webhookCtrl = async (req,res)=>{
       const User_ID = req.user.userId
     await logActivity({
               userId: req.user.userId,
-              activityType: "STRIPE PAYMENT",
-              description: `paid by user with ID ${User_ID}`,
+              activityType: ACTIVITY_TYPES.ORDER_UPDATE,
+              description: `payment completed by user with ID ${User_ID}`,
               relatedId: User_ID,
               ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
               userAgent: req.headers['user-agent'] || null
@@ -583,20 +583,30 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-// ยกเลิก order (สำหรับ pending orders เท่านั้น)
+// ยกเลิก order (สำหรับ pending orders หรือ destination orders ที่ยังไม่ได้ส่ง)
 const cancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
     const User_ID = req.user.userId;
 
-    // ตรวจสอบ order ที่เป็น pending
+    // ตรวจสอบ order ที่สามารถยกเลิกได้
     const [orderResult] = await conn.query(
-      'SELECT * FROM orders WHERE OID = ? AND User_ID = ? AND Order_Status = "pending"',
+      `SELECT o.*, p.Payment_Method, s.Ship_Status 
+       FROM orders o 
+       LEFT JOIN payments p ON o.Order_ID = p.Order_ID 
+       LEFT JOIN shipment s ON o.Shipment_ID = s.Shipment_ID
+       WHERE o.OID = ? AND o.User_ID = ? 
+       AND (o.Order_Status = "pending" 
+            OR (o.Order_Status = "completed" 
+                AND p.Payment_Method = "on delivery" 
+                AND s.Ship_Status = "preparing"))`,
       [orderId, User_ID]
     );
 
     if (!orderResult.length) {
-      return res.status(404).json({ message: "Pending order not found or already processed" });
+      return res.status(404).json({ 
+        message: "Order not found or cannot be cancelled. Only pending orders or COD orders that haven't been shipped can be cancelled." 
+      });
     }
 
     const order = orderResult[0];
@@ -629,17 +639,19 @@ const cancelOrder = async (req, res) => {
         [order.Shipment_ID]
       );
     }
-    if (req.user && req.user.userId) {
+
+        if (req.user && req.user.userId) {
       const User_ID = req.user.userId
     await logActivity({
               userId: req.user.userId,
-              activityType: "CANCEL ORDER ",
+              activityType: ACTIVITY_TYPES.ORDER_CANCEL,
               description: `cancel order by user with ID ${User_ID}`,
               relatedId: User_ID,
               ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
               userAgent: req.headers['user-agent'] || null
             });
     }
+
     res.json({
       success: true,
       message: "Order cancelled successfully"

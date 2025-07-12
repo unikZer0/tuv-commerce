@@ -134,7 +134,7 @@ const insertWishlistCtrl = async (req,res) =>{
                 const User_ID = req.user.userId
                 await logActivity({
                         userId: req.user.userId,
-                        activityType: "WISH LIST",
+                        activityType: ACTIVITY_TYPES.WISHLIST_ADD,
                         description: `wish list by user with ID ${User_ID}`,
                         relatedId: User_ID,
                         ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
