@@ -20,11 +20,14 @@ const getAllShipments = async (req, res) => {
                 u.Phone,
                 a.Village,
                 a.District,
-                a.Province
+                a.Province,
+                p.Payment_Method,
+                p.Payment_Status
             FROM shipment s
             LEFT JOIN orders o ON s.Shipment_ID = o.Shipment_ID
             LEFT JOIN users u ON o.User_ID = u.User_ID
             LEFT JOIN address a ON o.Address_ID = a.Address_ID
+            LEFT JOIN payments p ON o.Order_ID = p.Order_ID
             ORDER BY s.Ship_Date DESC
         `;
         
@@ -66,11 +69,14 @@ const getShipmentById = async (req, res) => {
                 a.District,
                 a.Province,
                 a.Transportation,
-                a.Branch
+                a.Branch,
+                p.Payment_Method,
+                p.Payment_Status
             FROM shipment s
             LEFT JOIN orders o ON s.Shipment_ID = o.Shipment_ID
             LEFT JOIN users u ON o.User_ID = u.User_ID
             LEFT JOIN address a ON o.Address_ID = a.Address_ID
+            LEFT JOIN payments p ON o.Order_ID = p.Order_ID
             WHERE s.Shipment_ID = ?
         `;
         
