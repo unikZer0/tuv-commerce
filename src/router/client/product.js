@@ -6,6 +6,7 @@ const addresses = require('../../controller/product/addressCtrl')
 const checkouts = require('../../controller/product/checkoutCtrl')
 const Products = require('../../controller/product/productCtrl');
 const ProductsSearch = require('../../controller/product/search')
+const notifications = require('../../controller/product/notificationCtrl')
 const verifyToken = require('../../controller/tokenhandle/verifyToken')
 //category
 router.post('/categories/',verifyToken,categories.getProducts);
@@ -59,5 +60,27 @@ router.post('/reviews', verifyToken, Products.addOrUpdateReview);
 
 // Delete user's review
 router.delete('/reviews/:productId', verifyToken, Products.deleteUserReview);
+
+//======================= NOTIFICATIONS =======================
+// Get all notifications for the current user
+router.get('/notifications', verifyToken, notifications.getUserNotifications);
+
+// Get unread notifications count
+router.get('/notifications/unread-count', verifyToken, notifications.getUnreadCount);
+
+// Get unread notifications
+router.get('/notifications/unread', verifyToken, notifications.getUnreadNotifications);
+
+// Mark notification as read
+router.put('/notifications/:notificationId/read', verifyToken, notifications.markAsRead);
+
+// Mark all notifications as read
+router.put('/notifications/read-all', verifyToken, notifications.markAllAsRead);
+
+// Delete a notification
+router.delete('/notifications/:notificationId', verifyToken, notifications.deleteNotification);
+
+// Get notifications by type
+router.get('/notifications/type/:type', verifyToken, notifications.getNotificationsByType);
 
 module.exports = router
