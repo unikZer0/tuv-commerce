@@ -89,10 +89,10 @@ const rawUuid = uuidv4();
           console.log(results);
           
             await logActivity({
-              userId: user.User_ID,
+              userId: results.insertId,
               activityType: ACTIVITY_TYPES.REGISTER,
-              description: `login with ID ${user.User_ID}`,
-              relatedId: user.User_ID,
+              description: `User registered with ID ${results.insertId}`,
+              relatedId: results.insertId,
               ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
               userAgent: req.headers['user-agent'] || null
             });
