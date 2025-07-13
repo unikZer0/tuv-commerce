@@ -138,18 +138,7 @@ const getAllNotifications = async (req, res) => {
         const totalNotifications = countResult[0].total;
         const totalPages = Math.ceil(totalNotifications / limit);
 
-        // Log activity
-        if (req.user && req.user.userId) {
-            await logActivity({
-                userId: req.user.userId,
-                activityType: "NOTIFICATION_VIEW_ALL",
-                description: `Admin viewed all notifications`,
-                relatedId: req.user.userId,
-                ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-                userAgent: req.headers['user-agent'] || null
-            });
-        }
-
+    
         res.status(200).json({
             message: 'All notifications retrieved successfully',
             data: notifications,

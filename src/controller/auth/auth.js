@@ -108,7 +108,7 @@ const getUserProfile = async (req, res) => {
     const userId = req.user.userId; // From token verification
     
     const [results] = await conn.query(
-      'SELECT User_ID, UID, FirstName, LastName, Email, Phone, DATE_FORMAT(Datebirth, "%Y-%m-%d") as Datebirth, Sex, Images, DATE_FORMAT(Registration_Date, "%Y-%m-%d") as Registration_Date FROM users WHERE User_ID = ?',
+      'SELECT User_ID, UID, Role_id, FirstName, LastName, Email, Phone, DATE_FORMAT(Datebirth, "%Y-%m-%d") as Datebirth, Sex, Images, DATE_FORMAT(Registration_Date, "%Y-%m-%d") as Registration_Date FROM users WHERE User_ID = ?',
       [userId]
     );
 
