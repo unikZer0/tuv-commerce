@@ -139,7 +139,7 @@ const getProductByIdCtrl = async (req, res) => {
       const User_ID = req.user.userId
     await logActivity({
               userId: req.user.userId,
-              activityType: ACTIVITY_TYPES.PASSWORD_CHANGE,
+              activityType: ACTIVITY_TYPES.PRODUCT_VIEW,
               description: `view by user with ID ${User_ID}`,
               relatedId: User_ID,
               ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
