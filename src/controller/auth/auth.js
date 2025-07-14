@@ -46,7 +46,7 @@ const loginCtrl = async (req,res)=>{
           });
     } catch (error) {
         console.log("err :" ,error);
-        
+        res.status(500).json({message: "error server"})
     }
 }
 const regitserCtrl = async(req,res)=>{
@@ -87,15 +87,7 @@ const rawUuid = uuidv4();
           const userData = await conn.query(registerQuery,[UID,FirstName,LastName,Email,Phone,Datebirth,Sex,hashPwd,Images || null ,RegistrationDate,Role_id])
           const results = userData[0]
           console.log(results);
-          
-            await logActivity({
-              userId: user.User_ID,
-              activityType: ACTIVITY_TYPES.REGISTER,
-              description: `login with ID ${user.User_ID}`,
-              relatedId: user.User_ID,
-              ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-              userAgent: req.headers['user-agent'] || null
-            });
+        
           
           return res.status(201).json({message:sucMessage.insert , users:results})
     } catch (error) {
