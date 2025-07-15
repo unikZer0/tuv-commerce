@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminProduct = require('../../adminCtrl/admin_Product/adminCtrlProduct');
 const adminNotifications = require('../../adminCtrl/admin_Product/adminNotificationCtrl');
+const adminOrderHistory = require('../../adminCtrl/admin_Product/adminOrderHistoryCtrl');
 const verifyToken = require('../../controller/tokenhandle/verifyToken');
 const authorizeRole = require('../../middleware/authorizeRole');
 
@@ -36,6 +37,22 @@ router.get('/notifications/stats', verifyToken, authorizeRole(1,2,4), adminNotif
 
 // Mark notification as read (admin override)
 router.put('/notifications/:notificationId/read', verifyToken, authorizeRole(1,2,4), adminNotifications.markNotificationAsReadAdmin);
+
+//======================= ORDER HISTORY ENDPOINTS =======================
+// Get all orders with filtering and pagination
+router.get('/orders', verifyToken, authorizeRole(1,2,4), adminOrderHistory.getAllOrdersCtrl);
+
+// Get order by ID with detailed information
+router.get('/orders/:id', verifyToken, authorizeRole(1,2,4), adminOrderHistory.getOrderByIdCtrl);
+
+// Get order statistics and analytics
+router.get('/orders/stats', verifyToken, authorizeRole(1,2,4), adminOrderHistory.getOrderStatsCtrl);
+
+// Update order status
+router.put('/orders/:id/status', verifyToken, authorizeRole(1,2,4), adminOrderHistory.updateOrderStatusCtrl);
+
+// Get orders by user ID
+router.get('/orders/user/:userId', verifyToken, authorizeRole(1,2,4), adminOrderHistory.getOrdersByUserIdCtrl);
 
 // TODO: Add route for search by product type
 
